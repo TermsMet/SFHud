@@ -78,9 +78,30 @@ public static class DataStore
         Data = data ?? CreateFresh();
         Normalize(Data);
         EnsureWelcome(Data);
+        UpgradeFrom(Data.AppVersion);
         Data.AppVersion = AppInfo.Version;
         if (!File.Exists(DataPath)) SaveNow();
         Backup("startup");
+    }
+
+    /// <summary>One-time fixes when an older version's data is opened.</summary>
+    private static void UpgradeFrom(string previous)
+    {
+        if (previous.Length == 0 || !Version.TryParse(previous, out var prev)) return; // fresh data: defaults are right
+        if (prev < new Version(1, 2, 1))
+        {
+            // 1.2.1 removed the pop-up player, so the overlay player is the only one. Many people had it switched
+            // off (one stray Ctrl+Alt+M) and only ever saw the pop-up: turn it back on once.
+            foreach (var p in Data.Profiles)
+            {
+                p.Settings.MediaVisible = true;
+                foreach (var pre in p.Presets)
+                    foreach (var page in pre.Pages)
+                        foreach (var e in page.Elements)
+                            if (e.Kind == ElementKind.Media) e.Visible = true;
+            }
+            Log.Info($"upgrade from {previous}: overlay music player switched back on");
+        }
     }
 
     private static UserData? TryRead(string path, out string? error)

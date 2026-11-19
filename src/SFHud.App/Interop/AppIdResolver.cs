@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using SFHud.Services;
 
@@ -53,6 +54,7 @@ internal static class AppIdResolver
         lock (Map)
         {
             if (Map.TryGetValue(aumid, out var hit)) return hit;
+            if (GeckoFor(aumid) is { } gecko) { Map[aumid] = gecko; return gecko; }
             if ((DateTime.UtcNow - _scanned).TotalSeconds < 5) return null; // don't rescan on every tick
             if (Misses.TryGetValue(aumid, out var missed) && (DateTime.UtcNow - missed).TotalSeconds < 60) return null;
             _scanned = DateTime.UtcNow;
@@ -62,6 +64,34 @@ internal static class AppIdResolver
             Misses[aumid] = DateTime.UtcNow;
             return null;
         }
+    }
+
+    /// <summary>
+    /// Firefox-family browsers (Firefox, LibreWolf, Waterfox, Floorp, Zen) report their media session under the
+    /// install's 16-hex-digit hash, not a name, and often no visible window carries it. Each browser lists its
+    /// install hashes as [SECTIONS] in installs.ini under its %APPDATA% folder, which tells us whose it is.
+    /// </summary>
+    private static string? GeckoFor(string aumid)
+    {
+        if (aumid.Length != 16 || !aumid.All(Uri.IsHexDigit)) return null;
+        string app = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        (string Dir, string Process)[] browsers =
+        {
+            (@"librewolf", "librewolf"), (@"Mozilla\Firefox", "firefox"), (@"Waterfox", "waterfox"),
+            (@"Floorp", "floorp"), (@"zen", "zen"), (@"Mullvad\MullvadBrowser", "mullvadbrowser"),
+        };
+        foreach (var (dir, process) in browsers)
+        {
+            try
+            {
+                string ini = System.IO.Path.Combine(app, dir, "installs.ini");
+                if (!System.IO.File.Exists(ini)) continue;
+                foreach (var line in System.IO.File.ReadLines(ini))
+                    if (line.Trim().Equals($"[{aumid}]", StringComparison.OrdinalIgnoreCase)) return process;
+            }
+            catch (Exception) { /* unreadable: try the next */ }
+        }
+        return null;
     }
 
     private static void Scan()

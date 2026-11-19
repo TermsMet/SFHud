@@ -517,7 +517,7 @@ public partial class LauncherWindow
         {
             MediaMode.SteamBrowser => "Steam browser: open the Steam overlay (Shift+Tab) in game, play music in its web browser, then use the player or its key.",
             MediaMode.Auto => "Auto follows whichever player is playing (Steam browser, any browser tab, Spotify…). Pick one source if two players fight.",
-            MediaMode.Firefox => "Firefox / LibreWolf: media keys must be on (about:config → media.hardwaremediakeys.enabled = true, the default).",
+            MediaMode.Firefox => "Firefox, LibreWolf, Waterfox, Floorp, Zen. If nothing shows, check about:config → media.hardwaremediakeys.enabled is true.",
             _ => "Chromium browsers (Chrome, Brave, Edge, Opera, Vivaldi, Arc…): any tab playing audio or video shows up. If nothing appears, check the browser's \"Hardware Media Key Handling\" flag is on (it is by default).",
         };
         sp.Children.Add(Ui.Section("MUSIC PLAYER", "Now Playing for the Steam browser, Chrome, Brave, Edge and other Chromium browsers, Firefox and Spotify", _subTab == "music",

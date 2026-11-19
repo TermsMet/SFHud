@@ -2,6 +2,14 @@
 
 ## 1.2.1
 
+### Music player fixes
+- **The music player didn't show in game:** for many people the overlay player's on/off setting had been switched off (one stray Ctrl+Alt+M or HIDE ON OVERLAY), so the only player they ever saw was the old pop-up out of game. Updating to 1.2.1 switches the overlay player back on once, in every profile.
+- If music is playing when you enter the game and the player is switched off, a toast tells you once per session which key shows it.
+- **LibreWolf (and Firefox, Waterfox, Floorp, Zen) not detected:** these browsers report their music under an anonymous install id, which SFHud couldn't match to the browser. It now reads the browser's own install list, so they show by name and the Firefox / LibreWolf source works.
+
+### Free stays offline
+- SFHud Free has no license, account or hardware-id checks at all, and works fully offline. Only the optional update check and trial offers ever go online. License checks and HWID locking are Pro only.
+
 ### Music player: on the overlay, in game only (Free and Pro)
 - The music player now lives only on the in-game overlay, in both editions. The separate pop-up player window (which could appear on the desktop and over other apps) has been removed, along with its key (Ctrl+Alt+Shift+M).
 - The overlay player's track progress bar is now in Free too.

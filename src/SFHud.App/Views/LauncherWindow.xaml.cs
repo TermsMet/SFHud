@@ -91,6 +91,15 @@ public partial class LauncherWindow : Window
         _overlay.CommandRequested += Run;
         _overlay.OtherAppInFrontChanged += other => { if (other) ParkPopups(); };
         _overlay.InGameChanged += inGame => { if (inGame) UnparkPopups(); else if (!OursInFront()) ParkPopups(); };
+        _overlay.InGameChanged += inGame =>
+        {
+            // Music playing but the overlay player switched off: say once per session how to bring it back.
+            if (!inGame || S.MediaVisible || _musicHintShown) return;
+            var m = MediaService.Instance;
+            if (!m.HasSession || !m.Playing) return;
+            _musicHintShown = true;
+            Dispatcher.BeginInvoke(() => _overlay.ShowToast("MUSIC PLAYER HIDDEN", $"{(m.Title.Length > 0 ? m.Title : "Music")} is playing. {Gesture("media.toggleui")} shows the player on the overlay."));
+        };
         NotePadView.PopOut = n => { EngageIfNeeded(); bool on = _overlay.TogglePinnedNote(n); _overlay.ShowToast("NOTE", on ? "Pinned on the overlay · move it in customize mode" : "Taken off the overlay"); return on; };
         NotePadView.IsPoppedOut = n => _overlay.IsNotePinned(n);
         Edition.ShowUpgrade = ShowUpgrade;
@@ -453,6 +462,8 @@ public partial class LauncherWindow : Window
         if (!DataStore.Preset.ActivePage.Elements.Any(e => e.Kind == ElementKind.Timers))
             _overlay.ShowToast("TIMER", "Add a Timers element to this page (Alt+~) to see it on screen.");
     }
+
+    private bool _musicHintShown;
 
     private void ToggleMediaUi()
     {
