@@ -1,0 +1,46 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:SFHud.Controls">
+
+    <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+    <!-- One running timer (overlay, dashboard, companion). DataContext = QuickTimer. -->
+    <DataTemplate x:Key="Tpl.Timer">
+        <Grid Margin="0,0,0,7">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="{Binding Title}" FontFamily="{DynamicResource F.Mono}" FontSize="{Binding FontSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                       Foreground="{Binding ColorBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+            <TextBlock x:Name="Rem" Grid.Column="1" Text="{Binding Remaining}" FontFamily="{DynamicResource F.Mono}" FontWeight="SemiBold"
+                       FontSize="{Binding FontSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                       Foreground="{DynamicResource B.Text}" Margin="10,0,0,0"/>
+            <Grid Grid.Row="1" Grid.ColumnSpan="2" Height="3" Margin="0,4,0,0">
+                <Border Background="{DynamicResource B.Line}"/>
+                <Border x:Name="Bar" HorizontalAlignment="Left" Background="{Binding ColorBrush}">
+                    <Border.Width>
+                        <MultiBinding Converter="{x:Static local:ProgressWidth.Instance}">
+                            <Binding Path="Progress"/>
+                            <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Grid}"/>
+                        </MultiBinding>
+                    </Border.Width>
+                </Border>
+            </Grid>
+        </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding Urgent}" Value="True">
+                <Setter TargetName="Rem" Property="Foreground" Value="{DynamicResource B.Amber}"/>
+                <Setter TargetName="Bar" Property="Background" Value="{DynamicResource B.Amber}"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Paused}" Value="True">
+                <Setter TargetName="Rem" Property="Opacity" Value="0.5"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+</ResourceDictionary>
