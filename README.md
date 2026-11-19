@@ -40,9 +40,9 @@ Get the newest version from **[Releases](https://github.com/TermsMet/SFHud/relea
 
 | File | Use it for |
 |---|---|
-| `SFHud-Free-Setup-<version>.exe` | **Recommended.** An installer that needs no admin rights. Updating keeps all your data. |
-| `SFHud-Free-v<version>-win-x64.zip` | A portable copy that runs from any folder or USB stick. |
-| `*.sha256` | Checksums for verifying a download. |
+| `SFHud-Setup-<version>.exe` | The installer. It needs no admin rights, and updating keeps all your data. |
+
+Each release lists the installer's SHA-256 checksum, so you can verify the download.
 
 You don't need to install anything else, because the .NET runtime is built into the exe. Windows SmartScreen may warn you because the exe is not code-signed. Choose **More info → Run anyway**. Full steps are in **[docs/INSTALL.md](docs/INSTALL.md)**.
 
@@ -140,7 +140,7 @@ You can rebind every key. The full list is in **[docs/KEYBINDS.md](docs/KEYBINDS
 
 | Guide | Contents |
 |---|---|
-| [Install & update](docs/INSTALL.md) | Installer, portable copy, updates, uninstalling |
+| [Install & update](docs/INSTALL.md) | Installer, updates, uninstalling, troubleshooting |
 | [User guide](docs/USER-GUIDE.md) | Pads, the overlay, DEFCON, presets, timers, crosshair, music, themes |
 | [Keybinds](docs/KEYBINDS.md) | Every default shortcut and how rebinding works |
 | [Note formatting](docs/NOTE-FORMATTING.md) | The formatting syntax for notes |

@@ -11,19 +11,19 @@ Nothing else is needed. The .NET runtime is built into `SFHud.exe`.
 
 ## Installer (recommended)
 
-1. Download `SFHud-Free-Setup-<version>.exe` from [Releases](https://github.com/TermsMet/SFHud/releases/latest).
+1. Download `SFHud-Setup-<version>.exe` from [Releases](https://github.com/TermsMet/SFHud/releases/latest).
 2. Run it. If Windows SmartScreen appears, choose **More info → Run anyway**. The exe isn't code-signed, so you can [check the checksum](#check-a-download) first if you like.
 3. Pick a folder. The default, `%LOCALAPPDATA%\Programs\SFHud`, needs no admin rights.
 4. Choose whether to add desktop and Start Menu shortcuts.
 5. Click **Install**, then **Launch SFHud**.
 
-## Portable
+## Portable copy
 
-Extract `SFHud-Free-v<version>-win-x64.zip` anywhere and run `SFHud.exe`. The portable copy uses the same data folder as the installed one. To give it its own data folder, see `SFHUD_DATA_DIR` in [BUILDING.md](BUILDING.md#command-line-and-environment). You can install a portable copy later from **Settings → About → Install / update SFHud**.
+Releases include only the installer. To get a portable `SFHud.exe` that runs from any folder, [build from source](BUILDING.md). It uses the same data folder as an installed copy. To give it its own data folder, see `SFHUD_DATA_DIR` in [BUILDING.md](BUILDING.md#command-line-and-environment).
 
 ## Updating
 
-When a new version is out, a bar appears at the top of the SFHud window. **UPDATE NOW** downloads the installer, checks its SHA-256 and runs setup. You can also run a newer `SFHud-Free-Setup-x.y.z.exe` by hand.
+When a new version is out, a bar appears at the top of the SFHud window. **UPDATE NOW** downloads the installer, checks its SHA-256 and runs setup. You can also run a newer `SFHud-Setup-x.y.z.exe` by hand.
 
 Setup closes SFHud (which saves first) and replaces the program. **Your notes, settings, keybinds and backups are kept.**
 
@@ -34,10 +34,10 @@ Go to **Windows Settings → Apps → SFHud → Uninstall**. Your data is kept u
 ## Check a download
 
 ```powershell
-Get-FileHash .\SFHud-Free-Setup-1.2.0.exe -Algorithm SHA256
+Get-FileHash .\SFHud-Setup-1.2.1.exe -Algorithm SHA256
 ```
 
-Compare the hash with the one in the matching `.sha256` file on the release page.
+Compare the hash with the SHA-256 listed on the release page.
 
 ## Troubleshooting
 
