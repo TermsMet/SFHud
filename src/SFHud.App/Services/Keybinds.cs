@@ -69,7 +69,6 @@ public static class Keybinds
         new("media.next", "Music: next track", "Music"),
         new("media.prev", "Music: previous track", "Music"),
         new("media.toggleui", "Show / hide the music player", "Music", "Ctrl+Alt+M"),
-        new("media.popup", "Pop-up player (music + video controls, anywhere)", "Music", "Ctrl+Alt+Shift+M"),
         new("video.playpause", "Video: play / pause", "Music"),
     };
 

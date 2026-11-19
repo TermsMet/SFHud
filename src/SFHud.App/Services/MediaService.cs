@@ -51,9 +51,6 @@ public sealed class MediaService : Observable
 
     public event Action? Changed;
 
-    /// <summary>Set by the main window: opens the pop-up player (SFHud Pro).</summary>
-    public static Action? OpenPlayer { get; set; }
-
     private static AppSettings S => DataStore.Settings;
 
     // ================================================================ sources the user can pick
@@ -329,6 +326,7 @@ public sealed class MediaService : Observable
             _ = RefreshAsync();
         }
         else if (_session is null || Playing != IsPlaying(_session)) _ = RefreshAsync();
+        else RaiseIfChanged();
     }
 
     private void OnProps(GlobalSystemMediaTransportControlsSession s, MediaPropertiesChangedEventArgs e) => OnUi(() => _ = RefreshAsync());
@@ -347,8 +345,7 @@ public sealed class MediaService : Observable
             Status = S.MediaSessionId.Length > 0 ? "The pinned player isn't open"
                 : S.MediaMode is MediaMode.Auto or MediaMode.AnyPlayer ? "Nothing playing"
                 : $"Nothing playing in {Describe(S.MediaMode)}";
-            Raise(nameof(ModeLabel));
-            Changed?.Invoke();
+            RaiseIfChanged();
             return;
         }
         try
@@ -363,6 +360,20 @@ public sealed class MediaService : Observable
             Status = Playing ? "Playing" : "Paused";
         }
         catch (Exception ex) { Status = "Can't read the player"; Log.Warn("media refresh: " + ex.Message); }
+        RaiseIfChanged();
+    }
+
+    private string _lastSig = "\0";
+
+    /// <summary>
+    /// The 2 s poll and chatty players (Chromium raises PlaybackInfoChanged for every timeline tick) used to
+    /// rebuild the overlay's player and the home page each time. Now listeners only hear about real changes.
+    /// </summary>
+    private void RaiseIfChanged()
+    {
+        string sig = string.Join("\u001f", HasSession, Title, Artist, Playing, SourceName, Status, PlayingElsewhere, ModeLabel);
+        if (sig == _lastSig) return;
+        _lastSig = sig;
         Raise(nameof(ModeLabel));
         Changed?.Invoke();
     }
@@ -394,7 +405,7 @@ public sealed class MediaService : Observable
     public async Task NextAsync() { if (_session is not null) try { await _session.TrySkipNextAsync(); } catch (Exception) { } }
     public async Task PrevAsync() { if (_session is not null) try { await _session.TrySkipPreviousAsync(); } catch (Exception) { } }
 
-    /// <summary>Seek bar for the pop-up player. Null when the player doesn't report a timeline.</summary>
+    /// <summary>Track progress for the overlay player. Null when the player doesn't report a timeline.</summary>
     public (TimeSpan Position, TimeSpan Length)? Timeline()
     {
         try

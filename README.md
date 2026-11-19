@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/TermsMet/thesfhud/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/TermsMet/thesfhud?style=flat-square&color=2f81f7&label=release"></a>
+  <a href="https://github.com/TermsMet/SFHud/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/TermsMet/SFHud?style=flat-square&color=2f81f7&label=release"></a>
   <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-1f6feb?style=flat-square">
   <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-512bd4?style=flat-square">
   <a href="LICENSE"><img alt="License: GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-3fb950?style=flat-square"></a>
@@ -36,7 +36,7 @@ This repository holds **SFHud Free**, the open-source edition. It works fully on
 
 ## Download
 
-Get the newest version from **[Releases](https://github.com/TermsMet/thesfhud/releases/latest)**:
+Get the newest version from **[Releases](https://github.com/TermsMet/SFHud/releases/latest)**:
 
 | File | Use it for |
 |---|---|
@@ -88,7 +88,7 @@ You don't need to install anything else, because the .NET runtime is built into 
 - Countdowns, stopwatches and repeating rounds (`7m30s patrol`, `@21:30 event`, `every 10m patrol`)
 - 10 built-in beeps, or import your own `.wav` or `.mp3`
 - 12 crosshair shapes with outlines and saved presets
-- Media controls for Spotify, browsers, the Steam overlay and more
+- A music player right on the overlay, with track progress, shown only in game. It works with Spotify, browsers, the Steam overlay and more
 
 </td>
 </tr>
@@ -150,7 +150,7 @@ You can rebind every key. The full list is in **[docs/KEYBINDS.md](docs/KEYBINDS
 
 ## SFHud Pro
 
-SFHud Free is complete on its own. **SFHud Pro** is an optional paid upgrade from [sfhud.site](https://sfhud.site) that pays for development. It adds an offline local AI, DEFCON auto-detection, a layout per DEFCON level, video on the overlay, unlimited pages and profiles, custom themes, a companion window and a pop-up mini player. Pro is closed source and is not part of this repository.
+SFHud Free is complete on its own. **SFHud Pro** is an optional paid upgrade from [sfhud.site](https://sfhud.site) that pays for development. It adds an offline local AI, DEFCON auto-detection, a layout per DEFCON level, video on the overlay, unlimited pages and profiles, custom themes, a companion window and event alerts from chat. Pro is closed source and is not part of this repository.
 
 ## Credits
 

@@ -113,19 +113,45 @@ public static class GameLocator
         return GameCatalog.Allowed(DataStore.Settings).Contains(name);
     }
 
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr OpenProcess(uint access, bool inherit, uint pid);
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr h);
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern bool QueryFullProcessImageName(IntPtr h, uint flags, System.Text.StringBuilder name, ref uint size);
+    private const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+
+    /// <summary>"gmod" for C:\…\gmod.exe, like Process.ProcessName. Null if the process is gone or protected.</summary>
+    internal static string? ImageName(uint pid)
+    {
+        if (pid == 0) return null;
+        IntPtr h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+        if (h == IntPtr.Zero)
+        {
+            // Protected / elevated processes refuse the handle: fall back to the slow path once (then cached).
+            try { using var p = Process.GetProcessById((int)pid); return p.ProcessName; } catch (Exception) { return null; }
+        }
+        try
+        {
+            var sb = new System.Text.StringBuilder(1024);
+            uint size = (uint)sb.Capacity;
+            if (!QueryFullProcessImageName(h, 0, sb, ref size)) return null;
+            return System.IO.Path.GetFileNameWithoutExtension(sb.ToString());
+        }
+        finally { CloseHandle(h); }
+    }
+
     private static string? ProcessName(uint pid)
     {
         // Cached for a minute: Windows reuses process ids, so an old name must not stick forever.
         if (PidNames.TryGetValue(pid, out var cached) && DateTime.UtcNow - cached.At < TimeSpan.FromMinutes(1)) return cached.Name;
-        try
-        {
-            using var p = Process.GetProcessById((int)pid);
-            string n = p.ProcessName;
-            if (PidNames.Count > 512) PidNames.Clear();
-            PidNames[pid] = (n, DateTime.UtcNow);
-            return n;
-        }
-        catch (Exception) { return null; }
+        // Process.GetProcessById(...).ProcessName takes a snapshot of every process on the PC each call;
+        // asking the one process for its image path is a single cheap kernel call.
+        string? n = ImageName(pid);
+        if (n is null) return null;
+        if (PidNames.Count > 512) PidNames.Clear();
+        PidNames[pid] = (n, DateTime.UtcNow);
+        return n;
     }
 
     /// <summary>Bring the target back to the front (after a quick note, or when the editor closes). Windows may refuse.</summary>

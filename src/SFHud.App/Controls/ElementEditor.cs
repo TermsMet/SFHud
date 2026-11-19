@@ -88,7 +88,7 @@ public static class ElementEditor
             sp.Children.Add(Ui.Switch("Loop", el.VideoLoop, v => { el.VideoLoop = v; C(); }));
             sp.Children.Add(Ui.Switch("Muted", el.VideoMuted, v => { el.VideoMuted = v; C(); }, "Videos start muted so they never drown out the game."));
             sp.Children.Add(Ui.Slider("Volume", 0, 1, el.VideoVolume, v => $"{v:P0}", v => { el.VideoVolume = Math.Round(v, 2); C(); }));
-            sp.Children.Add(Ui.Hint("The pop-up player (Ctrl+Alt+Shift+M) also controls videos. Videos pause while you're out of the game (Settings › Music & video)."));
+            sp.Children.Add(Ui.Hint("Videos pause while you're out of the game (Settings › Music & video)."));
         }
 
         sp.Children.Add(Ui.Spacer(4));

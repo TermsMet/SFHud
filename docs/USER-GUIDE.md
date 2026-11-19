@@ -44,7 +44,7 @@ Press **Alt+~** in game to open customize mode.
 - Snap-to-grid is on by default (hold **Alt** to move freely). You also get alignment guides, a layout lock, undo/redo and arrow-key nudging.
 - Changes preview live. **Apply** keeps them and **Revert** throws them away.
 
-**Elements**: status strip, clock, timers, DEFCON badge, server intel, note pads, pinned notes, info cards, music player and text labels. Each element has its own name, colours, font, text size, opacity, background, border, corners, padding and size.
+**Elements**: info bar (game, preset, session time, clock and a DEFCON chip), clock, timers, DEFCON badge, server intel, note pads, pinned notes, info cards, music player and text labels. Each element has its own name, colours, font, text size, opacity, background, border, corners, padding and size.
 
 **Pages** hold sets of elements. You can create, rename, duplicate, delete and reorder pages, pick a default, and switch pages with **Ctrl+Alt+]** / **Ctrl+Alt+[** or a key of your own per page. Layouts can be saved and loaded, and positions reset.
 
@@ -88,6 +88,8 @@ You can create, rename, duplicate, delete, export and import presets (`.sfhudpre
 
 Play, pause and skip for the **Steam overlay browser**, any Chromium browser, Firefox, Spotify and other players, through Windows' media controls. **Auto** follows whatever is playing.
 
+- The player is part of the overlay, so it **only shows in game**. It never opens as a separate window over other apps or the desktop.
+- It shows the track, artist, play / pause / skip and a progress bar when the player reports one.
 - **Ctrl+Alt+Space** plays or pauses. **Ctrl+Alt+M** shows or hides the player.
 - The player follows you to every overlay page in game.
 

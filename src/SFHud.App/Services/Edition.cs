@@ -14,7 +14,6 @@ public enum ProFeature
     UnlimitedProfiles,
     CustomThemes,
     Companion,
-    MiniPlayer,
     ChatAlerts,
 }
 
@@ -77,7 +76,6 @@ public static class Edition
         (ProFeature.UnlimitedProfiles, "Profiles", $"{FreeProfiles}", "Unlimited (Main RP, Training, Event…)"),
         (ProFeature.CustomThemes, "Custom themes", "All built-in themes", "Theme editor and background image"),
         (ProFeature.Companion, "Companion window", "—", "Your overlay as a normal window for a second screen"),
-        (ProFeature.MiniPlayer, "Pop-up mini player", "Overlay music player and media keys", "Floating player with seek bar; shows itself on the desktop when you leave the game"),
     };
 
     public static string Describe(ProFeature f)

@@ -43,6 +43,8 @@ internal static class AppIdResolver
 
     private static readonly Dictionary<string, string> Map = new(StringComparer.OrdinalIgnoreCase);
     private static DateTime _scanned = DateTime.MinValue;
+    /// <summary>Ids no window carried at the last scan (e.g. the Steam overlay's anonymous id): asked again only after a minute.</summary>
+    private static readonly Dictionary<string, DateTime> Misses = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Process name (no .exe) for an AppUserModelID, or null if no window carries it.</summary>
     public static string? ProcessFor(string aumid)
@@ -52,9 +54,13 @@ internal static class AppIdResolver
         {
             if (Map.TryGetValue(aumid, out var hit)) return hit;
             if ((DateTime.UtcNow - _scanned).TotalSeconds < 5) return null; // don't rescan on every tick
+            if (Misses.TryGetValue(aumid, out var missed) && (DateTime.UtcNow - missed).TotalSeconds < 60) return null;
             _scanned = DateTime.UtcNow;
             try { Scan(); } catch (Exception ex) { Log.Warn("aumid scan: " + ex.Message); }
-            return Map.TryGetValue(aumid, out hit) ? hit : null;
+            if (Map.TryGetValue(aumid, out hit)) { Misses.Remove(aumid); return hit; }
+            if (Misses.Count > 64) Misses.Clear();
+            Misses[aumid] = DateTime.UtcNow;
+            return null;
         }
     }
 
@@ -65,6 +71,9 @@ internal static class AppIdResolver
         var names = new Dictionary<uint, string>();
         EnumWindows((h, _) =>
         {
+            // Only visible top-level windows can own a media session's app id; skipping the hundreds of
+            // hidden ones avoids a COM property-store call per window.
+            if (!NativeMethods.IsWindowVisible(h)) return true;
             if (SHGetPropertyStoreForWindow(h, ref iid, out var store) != 0 || store is null) return true;
             try
             {
@@ -77,7 +86,7 @@ internal static class AppIdResolver
                             NativeMethods.GetWindowThreadProcessId(h, out uint pid);
                             if (!names.TryGetValue(pid, out var name))
                             {
-                                try { using var p = Process.GetProcessById((int)pid); name = p.ProcessName; } catch (Exception) { name = ""; }
+                                name = GameLocator.ImageName(pid) ?? "";
                                 names[pid] = name;
                             }
                             if (name.Length > 0) Map[id] = name;

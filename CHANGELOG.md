@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.2.1
+
+### Music player: on the overlay, in game only (Free and Pro)
+- The music player now lives only on the in-game overlay, in both editions. The separate pop-up player window (which could appear on the desktop and over other apps) has been removed, along with its key (Ctrl+Alt+Shift+M).
+- The overlay player's track progress bar is now in Free too.
+
+### New info bar look
+- The overlay's top bar has been redesigned: every item sits on one line at the same height, names and numbers each use one font (numbers no longer jitter), and the separators are even.
+- DEFCON is now a chip in the level's colour. ASSUMED / STALE shows as a quiet tag beside it instead of italic text.
+- Clean cut corners; the corner brackets that stuck out on the thin bar are gone.
+
+### Performance
+- The music player used to rebuild itself (and the SFHud home page) every 2 seconds when nothing was playing, and on every timeline tick from Chromium browsers. It now updates only when something actually changes.
+- Looking up which app owns a window took a snapshot of every process on the PC; it now asks that one process directly.
+- Matching a media player to its app no longer queries hundreds of hidden windows, and an unknown player (such as the Steam overlay) is looked up once a minute instead of every 5 seconds.
+- The info bar updates its text in place each second instead of rebuilding.
+
 ## 1.2.0
 
 ### Update bar (Free and Pro)

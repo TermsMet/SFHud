@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,7 +29,9 @@ public sealed class ElementView : Grid
 {
     public OverlayElement El { get; }
     private readonly ElementContext _ctx;
-    private TextBlock? _clock, _clockSec, _stripTarget;
+    private TextBlock? _clock, _clockSec;
+    private WrapPanel? _strip;
+    private readonly List<System.Windows.Documents.Run> _stripValues = new();
     private System.Windows.Shapes.Ellipse? _stripDot;
 
     public ElementView(OverlayElement el, ElementContext ctx)
@@ -49,7 +52,7 @@ public sealed class ElementView : Grid
     public void Build()
     {
         Children.Clear();
-        _clock = _clockSec = _stripTarget = null; _stripKey = "";
+        _clock = _clockSec = null; _strip = null; _stripValues.Clear(); _stripKey = "";
         _mediaFill = null; _mediaTrack = null; _mediaTime = null;
         // The top bar sizes to its content, so items you add (clock, DEFCON…) are never cut off.
         Width = El.Kind == ElementKind.Strip ? double.NaN : Math.Clamp(El.W, 60, 2400);
@@ -85,7 +88,14 @@ public sealed class ElementView : Grid
         double t = Math.Clamp(El.BorderThickness, 0, 6);
         if (El.Border == BorderKind.Hud)
         {
-            var f = new HudFrame { Content = content, Padding = new Thickness(pad, pad * 0.8, pad, pad * 0.9), Fill = bg, Stroke = stroke, StrokeThickness = Math.Max(0.5, t), Chamfer = Math.Clamp(El.CornerRadius + 2, 0, 24), ShowBrackets = true, BracketLength = 12, ClipContent = El.H > 0 };
+            bool strip = El.Kind == ElementKind.Strip;
+            var f = new HudFrame
+            {
+                Content = content, Fill = bg, Stroke = stroke, StrokeThickness = Math.Max(0.5, t), ClipContent = El.H > 0,
+                Padding = strip ? new Thickness(pad + 2, pad * 0.55, pad + 4, pad * 0.55) : new Thickness(pad, pad * 0.8, pad, pad * 0.9),
+                Chamfer = strip ? Math.Clamp(El.CornerRadius + 2, 0, 9) : Math.Clamp(El.CornerRadius + 2, 0, 24),
+                ChamferAll = strip, ShowBrackets = !strip, BracketLength = 12,
+            };
             f.BracketBrush = Accent;
             return f;
         }
@@ -130,54 +140,119 @@ public sealed class ElementView : Grid
     private FrameworkElement BuildStrip()
     {
         // Items and order come from Settings › Top bar (TopBar.Compose); refreshed every second in Tick().
-        var sp = new DockPanel { LastChildFill = true }; // dock (not a horizontal stack) so the text gets a real width and can wrap
-        // Sits level with the first line of text even when the bar wraps.
-        _stripDot = new System.Windows.Shapes.Ellipse { Width = 6, Height = 6, Margin = new Thickness(0, Math.Max(0, (Fs * 1.5 - 6) / 2), 8, 0), VerticalAlignment = VerticalAlignment.Top };
-        DockPanel.SetDock(_stripDot, Dock.Left);
-        // Wraps only where space is tight (companion window); on the overlay the bar is one line.
-        _stripTarget = new TextBlock { VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap, LineHeight = Fs * 1.5 };
-        sp.Children.Add(_stripDot);
-        sp.Children.Add(_stripTarget);
+        // A wrap panel, so it stays one line on the overlay (auto width) and wraps in the companion window.
+        _strip = new WrapPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         FillStrip();
-        return sp;
+        return _strip;
     }
 
     private string _stripKey = "";
 
+    /// <summary>Every segment shares this line box, so captions, values and the DEFCON chip sit on one centre line.</summary>
+    private double StripLine => Math.Round(Fs * 1.45);
+
+    private FrameworkElement StripSeparator() => new Border
+    {
+        Width = 1, Height = Math.Round(Fs * 1.1), Margin = new Thickness(Math.Round(Fs * 0.8), 0, Math.Round(Fs * 0.8), 0),
+        Background = ThemeManager.Brush("B.Line.Strong"), Opacity = 0.55, VerticalAlignment = VerticalAlignment.Center,
+    };
+
+    private TextBlock StripText() => new()
+    {
+        VerticalAlignment = VerticalAlignment.Center, LineHeight = StripLine, LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
+        TextTrimming = TextTrimming.None, TextWrapping = TextWrapping.NoWrap,
+    };
+
     private void FillStrip()
     {
-        if (_stripTarget is null) return;
+        if (_strip is null) return;
         var parts = TopBar.Compose(_ctx.TargetName(), _ctx.SessionText(), SessionTracker.Instance.Running);
-        string key = string.Join("|", parts.Select(p => p.Plain + p.Brush));
-        if (key == _stripKey) return; // nothing changed this second
+        var level = DefconService.Instance.Active;
+        // Layout key: what is shown and how it looks, not the values. Values (session time, clock) change
+        // every second and only update their text; the bar is rebuilt when an item, colour or tag changes.
+        string key = string.Join("|", parts.Select(p => p.Label + "~" + p.Brush + "~" + p.Tag + "~" + p.Bold + "~" + (p.Brush == "defcon" ? level?.Color : "")));
+        if (key == _stripKey && _stripValues.Count == parts.Count)
+        {
+            for (int i = 0; i < parts.Count; i++) if (_stripValues[i].Text != parts[i].Text) _stripValues[i].Text = parts[i].Text;
+            return;
+        }
         _stripKey = key;
-        var tb = _stripTarget;
-        tb.Inlines.Clear();
-        // Segments: small dim caption, bright value, optional tag; separated by thin rules, not dots.
+        _strip.Children.Clear();
+        _stripValues.Clear();
+
+        _stripDot = new System.Windows.Shapes.Ellipse
+        {
+            Width = 6, Height = 6, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, Math.Round(Fs * 0.55), 0),
+            Fill = ThemeManager.Brush(_ctx.GameAttached() ? "B.Ok" : "B.Amber"),
+        };
+        _strip.Children.Add(_stripDot);
+
+        if (parts.Count == 0)
+        {
+            var empty = StripText();
+            empty.Inlines.Add(new System.Windows.Documents.Run("TOP BAR · nothing selected") { Foreground = Dim, FontFamily = Mono, FontSize = Fs * 0.8 });
+            _strip.Children.Add(empty);
+            return;
+        }
+
+        double caption = Math.Max(7, Fs * 0.68);
         for (int i = 0; i < parts.Count; i++)
         {
-            if (i > 0)
-                tb.Inlines.Add(new System.Windows.Documents.InlineUIContainer(new Border
-                {
-                    Width = 1, Height = Fs * 1.05, Margin = new Thickness(Fs * 0.85, 0, Fs * 0.85, -Fs * 0.15),
-                    Background = ThemeManager.Brush("B.Line.Strong"), Opacity = 0.8,
-                }) { BaselineAlignment = BaselineAlignment.Center });
             var p = parts[i];
-            var brush = p.Brush == "defcon" ? (DefconService.Instance.Active is { } l ? ThemeManager.BrushOr(l.Color, "B.Accent") : Accent)
-                      : p.Brush == "B.Text" ? Fore : ThemeManager.Brush(p.Brush);
-            if (p.Label.Length > 0)
-                tb.Inlines.Add(new System.Windows.Documents.Run(p.Label + " ") { Foreground = Dim, FontFamily = Mono, FontSize = Fs * 0.78 });
-            tb.Inlines.Add(new System.Windows.Documents.Run(p.Text)
+            if (i > 0) _strip.Children.Add(StripSeparator());
+
+            if (p.Brush == "defcon")
             {
-                Foreground = brush, FontSize = Fs,
-                FontFamily = p.Bold && p.Brush == "B.Text" ? Display : Mono,
-                FontWeight = p.Bold ? FontWeights.SemiBold : FontWeights.Normal,
-            });
+                // A tinted chip in the level's colour: reads at a glance, and the tag (ASSUMED / STALE) sits outside it.
+                var col = level is not null ? ThemeManager.BrushOr(level.Color, "B.Accent") : Accent;
+                var c = (col as SolidColorBrush)?.Color ?? Colors.White;
+                bool unsure = p.Tag.Length > 0;
+                var chipText = StripText();
+                chipText.LineHeight = Math.Round(Fs * 1.2);
+                chipText.Inlines.Add(new System.Windows.Documents.Run(p.Label + " ") { Foreground = col, FontFamily = Mono, FontSize = caption, FontWeight = FontWeights.SemiBold });
+                var val = new System.Windows.Documents.Run(p.Text) { Foreground = col, FontFamily = Display, FontSize = Fs, FontWeight = FontWeights.Bold };
+                chipText.Inlines.Add(val);
+                _stripValues.Add(val);
+                var chip = new Border
+                {
+                    Child = chipText, VerticalAlignment = VerticalAlignment.Center, CornerRadius = new CornerRadius(2),
+                    Padding = new Thickness(Math.Round(Fs * 0.5), 0, Math.Round(Fs * 0.5), 0),
+                    Background = Frozen(Color.FromArgb((byte)(unsure ? 22 : 46), c.R, c.G, c.B)),
+                    BorderBrush = Frozen(Color.FromArgb((byte)(unsure ? 90 : 170), c.R, c.G, c.B)), BorderThickness = new Thickness(1),
+                };
+                _strip.Children.Add(chip);
+                if (unsure)
+                {
+                    var tag = StripText();
+                    tag.Margin = new Thickness(Math.Round(Fs * 0.45), 0, 0, 0);
+                    tag.Inlines.Add(new System.Windows.Documents.Run(p.Tag.ToUpperInvariant()) { Foreground = Dim, FontFamily = Mono, FontSize = caption });
+                    tag.ToolTip = p.Tag == "ASSUMED" ? "Nobody has confirmed this level yet" : "No new information for a while";
+                    _strip.Children.Add(tag);
+                }
+                continue;
+            }
+
+            var brush = p.Brush == "B.Text" ? Fore : ThemeManager.Brush(p.Brush);
+            var tb = StripText();
+            if (p.Label.Length > 0)
+                tb.Inlines.Add(new System.Windows.Documents.Run(p.Label + "  ") { Foreground = Dim, FontFamily = Mono, FontSize = caption });
+            // Names (game, preset, profile, server) in the display face; numbers (session, clock, date) in mono so they don't jitter.
+            bool name = p.Label.Length == 0 && !char.IsDigit(p.Text.FirstOrDefault()) && p.Text != "--:--:--";
+            var run = new System.Windows.Documents.Run(p.Text)
+            {
+                Foreground = brush, FontSize = name ? Fs * 0.95 : Fs,
+                FontFamily = name ? Display : Mono,
+                FontWeight = name ? FontWeights.SemiBold : FontWeights.Normal,
+            };
+            tb.Inlines.Add(run);
+            _stripValues.Add(run);
             if (p.Tag.Length > 0)
-                tb.Inlines.Add(new System.Windows.Documents.Run(" " + p.Tag.ToLowerInvariant()) { Foreground = Dim, FontFamily = Mono, FontSize = Fs * 0.74, FontStyle = FontStyles.Italic });
+                tb.Inlines.Add(new System.Windows.Documents.Run("  " + p.Tag.ToUpperInvariant()) { Foreground = Dim, FontFamily = Mono, FontSize = caption });
+            _strip.Children.Add(tb);
         }
-        if (parts.Count == 0) tb.Inlines.Add(new System.Windows.Documents.Run("TOP BAR · nothing selected") { Foreground = Dim, FontFamily = Mono, FontSize = Fs });
     }
+
+    private static SolidColorBrush Frozen(Color c) { var b = new SolidColorBrush(c); b.Freeze(); return b; }
 
     private FrameworkElement BuildClock()
     {
@@ -443,8 +518,6 @@ public sealed class ElementView : Grid
             buttons.Children.Add(Ui.IconButton("", "Previous", () => _ = m.PrevAsync()));
             buttons.Children.Add(Ui.IconButton(m.Playing ? "" : "", m.Playing ? "Pause" : "Play", () => _ = m.PlayPauseAsync(), 15));
             buttons.Children.Add(Ui.IconButton("", "Next", () => _ = m.NextAsync()));
-            if (MediaService.OpenPlayer is { } open)
-                buttons.Children.Add(Ui.ProFade(Ui.IconButton("", Edition.Has(ProFeature.MiniPlayer) ? "Pop-up player (seek bar, works outside the game)" : "Pop-up player · SFHud Pro", open, 11), ProFeature.MiniPlayer));
         }
         else
         {
@@ -462,8 +535,8 @@ public sealed class ElementView : Grid
         if (sub.Length > 0) info.Children.Add(T(sub, Fs * 0.8, Dim, Font));
         row.Children.Add(info);
         sp.Children.Add(row);
-        // Pro: the pop-up player's track progress, built into the overlay player too (refreshed each second in Tick).
-        if (Edition.Has(ProFeature.MiniPlayer) && m.HasSession)
+        // Track progress (refreshed each second in Tick). Hidden when the player reports no timeline.
+        if (m.HasSession)
         {
             var track = new Grid { Height = Math.Max(2, Fs * 0.22), Margin = new Thickness(0, Fs * 0.45, 0, 0) };
             track.Children.Add(new Border { Background = ThemeManager.Brush("B.Line"), CornerRadius = new CornerRadius(2) });
@@ -499,7 +572,7 @@ public sealed class ElementView : Grid
             _clockSec!.Text = now.ToString("ss");
             _clockSec.Visibility = s.ClockSeconds ? Visibility.Visible : Visibility.Collapsed;
         }
-        if (_stripTarget is not null)
+        if (_strip is not null)
         {
             _stripDot!.Fill = ThemeManager.Brush(_ctx.GameAttached() ? "B.Ok" : "B.Amber");
             FillStrip();

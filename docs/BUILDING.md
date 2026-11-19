@@ -11,8 +11,8 @@
 ## Quick build
 
 ```powershell
-git clone https://github.com/TermsMet/thesfhud.git
-cd thesfhud
+git clone https://github.com/TermsMet/SFHud.git
+cd SFHud
 dotnet run --project src/SFHud.App      # debug run
 ```
 

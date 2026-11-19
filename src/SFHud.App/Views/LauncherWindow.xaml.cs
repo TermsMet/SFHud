@@ -46,7 +46,6 @@ public partial class LauncherWindow : Window
     private TimerPromptWindow? _timerPrompt;
     private NotePadWindow? _padWindow;
     private AiWindow? _aiWindow;
-    private MiniPlayerWindow? _miniPlayer;
     /// <summary>SFHud pop-ups hidden because another app came in front of the game; shown again when it's back.</summary>
     private readonly List<Window> _parked = new();
     private string _page = "home";
@@ -91,19 +90,15 @@ public partial class LauncherWindow : Window
         _overlay.CustomizeChanged += on => { UpdateFooter(); if (!on && _page == "overlay") RefreshPageSoon(); if (!on) App.Keys?.Rebuild(); };
         _overlay.CommandRequested += Run;
         _overlay.OtherAppInFrontChanged += other => { if (other) ParkPopups(); };
-        _overlay.InGameChanged += inGame => { if (inGame) UnparkPopups(); else if (!OursInFront()) ParkPopups(); UpdateMiniPlayer(); };
-        MediaService.Instance.Changed += () => Dispatcher.BeginInvoke(UpdateMiniPlayer, DispatcherPriority.Background);
+        _overlay.InGameChanged += inGame => { if (inGame) UnparkPopups(); else if (!OursInFront()) ParkPopups(); };
         NotePadView.PopOut = n => { EngageIfNeeded(); bool on = _overlay.TogglePinnedNote(n); _overlay.ShowToast("NOTE", on ? "Pinned on the overlay · move it in customize mode" : "Taken off the overlay"); return on; };
         NotePadView.IsPoppedOut = n => _overlay.IsNotePinned(n);
         Edition.ShowUpgrade = ShowUpgrade;
-        MediaService.OpenPlayer = () => ShowMiniPlayer(manual: true);
-        Edition.Changed += () => Dispatcher.BeginInvoke(() => { UpdateEditionBadge(); if (!Edition.Has(ProFeature.MiniPlayer)) _miniPlayer?.Hide(); _overlay.Refresh(); RenderPage(); });
+        Edition.Changed += () => Dispatcher.BeginInvoke(() => { UpdateEditionBadge(); _overlay.Refresh(); RenderPage(); });
         _overlay.IsMainWindow = h => { var me = new System.Windows.Interop.WindowInteropHelper(this).Handle; return h == me || NativeMethods.GetAncestor(h, NativeMethods.GA_ROOTOWNER) == me; };
         _tick.Tick += (_, _) => OnTick();
 
         Loaded += (_, _) => Start();
-        Activated += (_, _) => UpdateMiniPlayer();
-        Deactivated += (_, _) => UpdateMiniPlayer();
         Closing += OnClosing;
         PreviewKeyDown += OnKeyDown;
         WindowShape.Attach(this, WindowFrame.Chamfer);
@@ -158,7 +153,7 @@ public partial class LauncherWindow : Window
         _closingForReal = true;
         _tick.Stop();
         if (_fgHook != IntPtr.Zero) NativeMethods.UnhookWinEvent(_fgHook);
-        foreach (Window w in new Window?[] { _quickNote, _timerPrompt, _padWindow, _aiWindow, _companion, _miniPlayer }.Where(w => w is not null)!) w.Close();
+        foreach (Window w in new Window?[] { _quickNote, _timerPrompt, _padWindow, _aiWindow, _companion }.Where(w => w is not null)!) w.Close();
         VideoHub.StopAll();
         DataStore.SaveNow();
         _hotkeys?.Dispose();
@@ -430,7 +425,6 @@ public partial class LauncherWindow : Window
             case "media.next": _ = MediaService.Instance.NextAsync(); break;
             case "media.prev": _ = MediaService.Instance.PrevAsync(); break;
             case "media.toggleui": ToggleMediaUi(); break;
-            case "media.popup": ToggleMiniPlayer(); break;
             case "video.playpause": if (VideoHub.Current is { } vp) { vp.Toggle(); _overlay.ShowToast("VIDEO", vp.Playing ? "Playing" : "Paused"); } else _overlay.ShowToast("VIDEO", "No video on this page. Add a Video element in customize mode."); break;
             default:
                 if (action.StartsWith("pad.open.") && p.Pad(action[9..]) is { } po) { if (CanPopUp()) TogglePads(po); }
@@ -469,7 +463,6 @@ public partial class LauncherWindow : Window
     private void PanicHide()
     {
         _overlay.Disengage();
-        _miniPlayer?.Hide();
         foreach (Window w in new Window?[] { _companion, _quickNote, _timerPrompt, _padWindow, _aiWindow }.Where(w => w is not null)!)
         {
             if (w == _companion) w.Hide(); else w.Close();
@@ -591,43 +584,6 @@ public partial class LauncherWindow : Window
     private bool CanPopUp() => !S.PopupsFollowGame || _overlay.InGame || GameLocator.IsForeground(Target) || OursInFront();
 
 
-    /// <summary>
-    /// The little player: shown on its own while you're out of the game and music is playing or paused
-    /// (in game the overlay's music element does the job), or any time with Ctrl+Alt+Shift+M.
-    /// </summary>
-    private void UpdateMiniPlayer()
-    {
-        if (_closingForReal) return;
-        if (_overlay.InGame) MiniPlayerWindow.DismissedThisTime = false;
-        if (_miniPlayer is { Manual: true, IsVisible: true }) { _miniPlayer.Refresh(); return; }
-        var m = MediaService.Instance;
-        bool want = Edition.Has(ProFeature.MiniPlayer) && S.MiniPlayerOutOfGame && !MiniPlayerWindow.DismissedThisTime && _overlay.Engaged && !_overlay.InGame && !_overlay.Customizing
-                    && (WindowState == WindowState.Minimized || !IsActive)
-                    && (m.HasSession && (m.Playing || m.Title.Length > 0) || VideoHub.Current is { Playing: true });
-        if (want) ShowMiniPlayer(manual: false);
-        else if (_miniPlayer is { Manual: false, IsVisible: true }) _miniPlayer.Hide();
-    }
-
-    private void ShowMiniPlayer(bool manual)
-    {
-        if (manual && !Ui.RequirePro(ProFeature.MiniPlayer)) return;
-        if (!Edition.Has(ProFeature.MiniPlayer)) return;
-        if (_miniPlayer is not { IsLoaded: true })
-        {
-            _miniPlayer = new MiniPlayerWindow();
-            _miniPlayer.Closed += (_, _) => _miniPlayer = null;
-        }
-        _miniPlayer.Manual = manual;
-        if (!_miniPlayer.IsVisible) _miniPlayer.Show();
-        _miniPlayer.Refresh();
-        _ = MediaService.Instance.StartAsync();
-    }
-
-    private void ToggleMiniPlayer()
-    {
-        if (_miniPlayer is { IsVisible: true }) { _miniPlayer.Manual = false; _miniPlayer.Hide(); MiniPlayerWindow.DismissedThisTime = true; return; }
-        ShowMiniPlayer(manual: true);
-    }
 
     private void OpenCompanion()
     {

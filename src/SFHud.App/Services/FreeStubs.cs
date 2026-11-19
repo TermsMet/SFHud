@@ -1,5 +1,5 @@
 ﻿// SFHud Free: empty stand-ins for the Pro features. The real code (local AI, video, screen reading,
-// pop-up player, companion window, chat alerts) lives in the Pro\ folder, which is not part of the free
+// companion window, chat alerts) lives in the Pro\ folder, which is not part of the free
 // build or the open-source repo. So the Free exe has nothing to "unlock": these types only exist so the
 // shared code compiles, every call to them is behind an Edition.Has(...) check, and they do nothing.
 using System;
@@ -67,14 +67,6 @@ namespace SFHud.Services
 
 namespace SFHud.Views
 {
-    /// <summary>Free: never created (the pop-up player is Pro).</summary>
-    public sealed class MiniPlayerWindow : Window
-    {
-        public static bool DismissedThisTime { get; set; }
-        public bool Manual { get; set; }
-        public void Refresh() { }
-    }
-
     /// <summary>Free: never created (the companion window is Pro).</summary>
     public sealed class CompanionWindow : Window { }
 

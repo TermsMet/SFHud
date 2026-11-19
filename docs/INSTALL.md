@@ -11,7 +11,7 @@ Nothing else is needed. The .NET runtime is built into `SFHud.exe`.
 
 ## Installer (recommended)
 
-1. Download `SFHud-Free-Setup-<version>.exe` from [Releases](https://github.com/TermsMet/thesfhud/releases/latest).
+1. Download `SFHud-Free-Setup-<version>.exe` from [Releases](https://github.com/TermsMet/SFHud/releases/latest).
 2. Run it. If Windows SmartScreen appears, choose **More info → Run anyway**. The exe isn't code-signed, so you can [check the checksum](#check-a-download) first if you like.
 3. Pick a folder. The default, `%LOCALAPPDATA%\Programs\SFHud`, needs no admin rights.
 4. Choose whether to add desktop and Start Menu shortcuts.
