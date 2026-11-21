@@ -22,6 +22,10 @@ namespace SFHud.Services
         public string LastError => "The local AI is part of SFHud Pro.";
         public bool CanRun => false;
         public bool IsRunning => false;
+        public bool HeldUnloaded => false;
+        public bool CanAutoUse => false;
+        public void Unload() { }
+        public Task<bool> LoadAsync(CancellationToken ct = default) => Task.FromResult(false);
         public void Preload() { }
         public void RefreshInstalled() { }
         public void Shutdown() { }

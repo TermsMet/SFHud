@@ -68,6 +68,8 @@ public static class Keybinds
         new("media.playpause", "Music: play / pause (your chosen source)", "Music", "Ctrl+Alt+Space"),
         new("media.next", "Music: next track", "Music"),
         new("media.prev", "Music: previous track", "Music"),
+        new("media.volup", "Music: volume up (player app only)", "Music", "Ctrl+Alt+Add"),
+        new("media.voldown", "Music: volume down (player app only)", "Music", "Ctrl+Alt+Subtract"),
         new("media.toggleui", "Show / hide the music player", "Music", "Ctrl+Alt+M"),
         new("video.playpause", "Video: play / pause", "Music"),
     };

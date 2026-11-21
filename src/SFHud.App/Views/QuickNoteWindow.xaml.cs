@@ -31,7 +31,7 @@ public partial class QuickNoteWindow : Window
         DraftText.Text = NoteBox.Text.Length > 0 ? "DRAFT RESTORED" : "";
         BuildChips();
 
-        Loaded += (_, _) => { Activate(); NoteBox.Focus(); Keyboard.Focus(NoteBox); };
+        Loaded += (_, _) => { GameScreen.CenterOnGame(this, _target); Activate(); NoteBox.Focus(); Keyboard.Focus(NoteBox); };
         Deactivated += (_, _) => SafeClose();
     }
 

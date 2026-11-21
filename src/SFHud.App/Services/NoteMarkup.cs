@@ -30,6 +30,8 @@ public sealed class MarkupOptions
     public Action<int>? OnRemoveImage { get; init; }
     /// <summary>Overlay elements cap images to their own width.</summary>
     public double MaxImageWidth { get; init; } = double.PositiveInfinity;
+    /// <summary>Draw into a read-only rich text box so the text can be selected and copied (note pad).</summary>
+    public bool Selectable { get; init; }
 }
 
 /// <summary>
@@ -126,6 +128,7 @@ public static partial class NoteMarkup
 
     public static FrameworkElement Render(string text, MarkupOptions o)
     {
+        if (o.Selectable) return RenderSelectable(text, o);
         var panel = new StackPanel();
         var lines = text.Replace("\r", "").Split('\n');
         int shown = 0;
@@ -155,6 +158,159 @@ public static partial class NoteMarkup
             shown++;
         }
         return panel;
+    }
+
+    /// <summary>
+    /// Same formatting as <see cref="Render"/>, but in a read-only RichTextBox: drag to select
+    /// across lines, Ctrl+C / Ctrl+A work, links and task boxes still respond.
+    /// </summary>
+    private static FrameworkElement RenderSelectable(string text, MarkupOptions o)
+    {
+        var doc = new FlowDocument
+        {
+            PagePadding = new Thickness(0),
+            FontSize = o.FontSize,
+            Foreground = o.Foreground,
+            TextAlignment = TextAlignment.Left,
+            LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
+            LineHeight = o.FontSize * o.LineSpacing + 1,
+        };
+        if (o.FontFamily is not null) doc.FontFamily = o.FontFamily;
+
+        var lines = text.Replace("\r", "").Split('\n');
+        int shown = 0;
+        bool lastBlank = false;
+        Block? last = null;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string line = lines[i];
+            if (line.Trim().Length == 0)
+            {
+                if (!lastBlank && last is not null) { var mg = last.Margin; last.Margin = new Thickness(mg.Left, mg.Top, mg.Right, mg.Bottom + o.FontSize * 0.45); }
+                lastBlank = true;
+                continue;
+            }
+            lastBlank = false;
+            if (shown >= o.MaxLines)
+            {
+                doc.Blocks.Add(new Paragraph(new Run("…") { Foreground = o.Dim }) { Margin = new Thickness(0) });
+                break;
+            }
+            if (NoteImages.Parse(line) is { } img)
+            {
+                last = new BlockUIContainer(RenderImage(img, i, o)) { Margin = new Thickness(0) };
+                doc.Blocks.Add(last);
+                shown += 3;
+                continue;
+            }
+            last = LineBlock(line, i, o);
+            doc.Blocks.Add(last);
+            shown++;
+        }
+
+        var box = new RichTextBox
+        {
+            Document = doc,
+            IsReadOnly = true,
+            IsDocumentEnabled = true,
+            IsReadOnlyCaretVisible = false,
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Padding = new Thickness(0),
+            Foreground = o.Foreground,
+            SelectionBrush = o.Accent,
+            SelectionOpacity = 0.35,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            FocusVisualStyle = null,
+            Cursor = Cursors.IBeam,
+        };
+        // The box has its own ScrollViewer; hand the wheel to the list it sits in.
+        box.PreviewMouseWheel += (s, e) =>
+        {
+            if (s is not UIElement u || VisualTreeHelper.GetParent(u) is not UIElement parent) return;
+            e.Handled = true;
+            parent.RaiseEvent(new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta) { RoutedEvent = UIElement.MouseWheelEvent, Source = u });
+        };
+        return box;
+    }
+
+    private static Block LineBlock(string line, int index, MarkupOptions o)
+    {
+        double size = o.FontSize;
+        if (line.Trim() == "---")
+            return new BlockUIContainer(new Border { Height = 1, Margin = new Thickness(0, size * 0.4, 0, size * 0.4), Background = o.Dim, Opacity = 0.5 }) { Margin = new Thickness(0) };
+
+        var p = new Paragraph { FontSize = size, LineHeight = size * o.LineSpacing + 1, Margin = new Thickness(0, 0, 0, 1) };
+        Brush fg = o.Foreground;
+        string body = line;
+        double indent = 0, hang = 0;
+        Match m;
+        if ((m = HeadingRx().Match(line)).Success)
+        {
+            int level = m.Groups[1].Value.Length;
+            p.FontSize = size * (level == 1 ? 1.42 : level == 2 ? 1.22 : 1.08);
+            p.FontWeight = FontWeights.SemiBold;
+            p.LineHeight = p.FontSize * 1.2 + 1;
+            if (level <= 2) fg = o.Accent;
+            p.Margin = new Thickness(0, level == 1 ? 2 : 1, 0, 2);
+            body = line[m.Length..];
+        }
+        else if (IsTaskLine(line, out bool done))
+        {
+            var tm = TaskRx().Match(line);
+            if (!tm.Success) tm = TodoRx().Match(line);
+            indent = tm.Groups[1].Value.Length * 6;
+            body = line[tm.Length..];
+            var check = new TextBlock
+            {
+                Text = done ? "" : "",
+                FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
+                FontSize = size * 0.95,
+                Foreground = done ? o.Dim : o.Accent,
+                Margin = new Thickness(0, 0, 7, 0),
+                Background = Brushes.Transparent,
+                Cursor = Cursors.Arrow,
+            };
+            if (o.Interactive && o.OnToggleTask is { } toggle)
+            {
+                check.Cursor = Cursors.Hand;
+                check.ToolTip = done ? "Mark as not done" : "Mark as done";
+                check.MouseLeftButtonDown += (_, e) => { toggle(index); e.Handled = true; };
+            }
+            p.Inlines.Add(new InlineUIContainer(check) { BaselineAlignment = BaselineAlignment.Center });
+            hang = size * 0.95 + 7;
+            if (done) { fg = o.Dim; p.TextDecorations = TextDecorations.Strikethrough; }
+        }
+        else if ((m = BulletRx().Match(line)).Success)
+        {
+            indent = m.Groups[1].Value.Length * 6;
+            body = line[m.Length..];
+            p.Inlines.Add(new Run((indent > 0 ? "◦" : "•") + "  ") { Foreground = o.Accent });
+            hang = size * 1.1;
+        }
+        else if ((m = NumberRx().Match(line)).Success)
+        {
+            indent = m.Groups[1].Value.Length * 6;
+            body = line[m.Length..];
+            p.Inlines.Add(new Run(m.Groups[2].Value + ".  ") { Foreground = o.Accent });
+            hang = size * 1.5;
+        }
+        else if (line.StartsWith("> "))
+        {
+            body = line[2..];
+            p.FontStyle = FontStyles.Italic;
+            fg = o.Dim;
+            p.BorderBrush = o.Accent;
+            p.BorderThickness = new Thickness(2, 0, 0, 0);
+            p.Padding = new Thickness(9, 1, 0, 1);
+        }
+
+        p.Foreground = fg;
+        AddInlines(p.Inlines, body, o, fg);
+        if (hang > 0) { p.TextIndent = -hang; indent += hang; }
+        p.Margin = new Thickness(indent, p.Margin.Top, 0, p.Margin.Bottom);
+        return p;
     }
 
     /// <summary>An image line: picture, optional caption, and (when interactive) a corner grip to resize it.</summary>

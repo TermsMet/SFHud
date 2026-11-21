@@ -131,7 +131,8 @@ public sealed class NotePadWindow : Window
     {
         _applying = true;
         ApplyLimits();
-        var wa = SystemParameters.WorkArea;
+        // Always on the game's monitor (not the primary one) when the game is running.
+        var wa = GameScreen.GameWorkArea(this, _target);
         Width = Math.Clamp(_pad.WinW, MinWidth, Math.Min(MaxWidth, wa.Width));
         Height = Math.Clamp(_pad.WinH, MinHeight, Math.Min(MaxHeight, wa.Height));
         // Saved as fractions of the work area so a resolution change keeps it on screen.
@@ -145,7 +146,7 @@ public sealed class NotePadWindow : Window
     private void SaveGeometry()
     {
         if (_applying || !IsLoaded || WindowState != WindowState.Normal) return;
-        var wa = SystemParameters.WorkArea;
+        var wa = GameScreen.OwnWorkArea(this);
         double w = Math.Round(ActualWidth), h = Math.Round(ActualHeight);
         double x = Math.Round(Math.Clamp((Left - wa.Left) / Math.Max(1, wa.Width - ActualWidth), 0, 1), 4);
         double y = Math.Round(Math.Clamp((Top - wa.Top) / Math.Max(1, wa.Height - ActualHeight), 0, 1), 4);

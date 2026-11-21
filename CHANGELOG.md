@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.2.3
+
+### Note pad: select and copy text
+- You can now drag across a note in the note pad (dashboard Notes page and pad windows) to select any part of it, across lines, and copy it with **Ctrl+C** or right-click › **Copy selection**. **Ctrl+A** / **Select all text** selects the whole note. Formatting, links and task boxes work as before.
+
+### Pop-ups open on the game's monitor
+- Note pad windows, quick note, the timer prompt and the AI window now open on the monitor the game is on, instead of the primary monitor (or wherever the mouse was). Pad positions are remembered relative to that monitor.
+
+### Music player: volume slider
+- The music player has a **volume slider** (on the dashboard Now Playing card, and on the overlay player in customize mode). It changes only the music app's own volume in the Windows mixer, never the game or your master volume.
+- New keys: **Ctrl+Alt+Num +** / **Ctrl+Alt+Num -** turn the music up / down in game (rebind them in Settings › Keybinds). A toast shows the new level.
+
+### Licensing stays on SFHud's own server (Pro)
+- Pro's license checks use only sfhud.site and license.sfhud.site. The old backup address on a third-party DNS name is gone.
+
+## 1.2.2
+
+### Local AI: UNLOAD now stays unloaded (Pro)
+- Clicking **UNLOAD** freed the model, but it loaded straight back: the Local AI page redrew itself and preloaded it again, and opening the page or the AI window later did the same. Now an unload holds until you click **LOAD** or ask the AI something yourself.
+- While it's unloaded, the background features (DEFCON auto-switch, chat event alerts, the server-intel chat summary) leave it off instead of loading it again.
+- The 10-minute idle unload is unchanged.
+
 ## 1.2.1
 
 ### Music player fixes

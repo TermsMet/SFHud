@@ -43,13 +43,6 @@ public sealed class AppSettings
     public bool MediaVisible { get; set; } = true;
     /// <summary>Video elements pause when you leave the game and resume when you come back.</summary>
     public bool VideoPauseOutOfGame { get; set; } = true;
-    /// <summary>A small play / pause player on the desktop while the overlay is hidden (game not in front).</summary>
-    public bool MiniPlayerOutOfGame { get; set; } = true;
-    public double MiniPlayerX { get; set; } = double.NaN;
-    public double MiniPlayerY { get; set; } = double.NaN;
-    /// <summary>Exact spot of the pop-up player in screen units (any monitor). NaN = not moved yet.</summary>
-    public double MiniPlayerLeft { get; set; } = double.NaN;
-    public double MiniPlayerTop { get; set; } = double.NaN;
     /// <summary>Pad and pinned-note windows hide while another app is in front of the game, and come back with it.</summary>
     public bool PopupsFollowGame { get; set; } = true;
     /// <summary>Keep overlay elements off the game's chat box, so you can always read chat.</summary>

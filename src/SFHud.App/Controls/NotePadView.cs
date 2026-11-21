@@ -526,8 +526,29 @@ public sealed class NotePadView : DockPanel
             OnToggleTask = line => Pads.ToggleTask(n, line),
             OnResizeImage = (line, w) => Pads.ResizeImage(n, line, w),
             OnRemoveImage = line => Pads.RemoveImage(n, line),
+            Selectable = true,
         };
         var body = NoteMarkup.Render(n.Text, opts);
+        if (body is RichTextBox rtb)
+        {
+            // Right-click on the text: copy what's selected, plus the usual note actions.
+            var textMenu = NoteMenu(pad, n);
+            var copySel = new MenuItem { Header = "Copy selection", InputGestureText = "Ctrl+C" };
+            copySel.Click += (_, _) => { if (!rtb.Selection.IsEmpty) { Clipboard.SetText(rtb.Selection.Text); Flash("Selection copied"); } };
+            var selectAll = new MenuItem { Header = "Select all text", InputGestureText = "Ctrl+A" };
+            selectAll.Click += (_, _) => { rtb.Focus(); rtb.SelectAll(); };
+            var sep = new Separator();
+            textMenu.Items.Insert(0, copySel);
+            textMenu.Items.Insert(1, selectAll);
+            textMenu.Items.Insert(2, sep);
+            textMenu.Opened += (_, _) => copySel.IsEnabled = !rtb.Selection.IsEmpty;
+            rtb.ContextMenu = textMenu;
+            rtb.PreviewKeyDown += (_, e) =>
+            {
+                if (e.Key == Key.C && Keyboard.Modifiers == ModifierKeys.Control && !rtb.Selection.IsEmpty)
+                { Clipboard.SetText(rtb.Selection.Text); Flash("Selection copied"); e.Handled = true; }
+            };
+        }
 
         var meta = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
         if (n.Pinned) { var pin = Ui.Icon("", 10, "B.Amber"); pin.Margin = new Thickness(0, 0, 6, 0); meta.Children.Add(pin); }

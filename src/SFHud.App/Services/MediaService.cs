@@ -402,6 +402,37 @@ public sealed class MediaService : Observable
         _ = RefreshAsync();
     }
 
+    // ================================================================ volume (the player app's own mixer slider)
+
+    /// <summary>Process names whose audio is the current player (lower case, no .exe).</summary>
+    private static HashSet<string> AudioProcesses(string aumid)
+    {
+        string k = AppKey(aumid);
+        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        switch (k)
+        {
+            case "steam": set.Add("steamwebhelper"); set.Add("steam"); break;
+            case "msedge": set.Add("msedge"); set.Add("msedgewebview2"); break;
+            default: if (k.Length is > 0 and <= 40) set.Add(k); break;
+        }
+        if (AppIdResolver.ProcessFor(aumid) is { Length: > 0 } p) set.Add(p.ToLowerInvariant());
+        return set;
+    }
+
+    /// <summary>The player's volume (0..1) in the Windows mixer, or null when there's no player or it has no audio session yet.</summary>
+    public double? Volume => _session is null ? null : AppVolume.Get(AudioProcesses(_session.SourceAppUserModelId));
+
+    /// <summary>Sets only the player app's volume (never the game or the master volume).</summary>
+    public bool SetVolume(double level) => _session is not null && AppVolume.Set(AudioProcesses(_session.SourceAppUserModelId), level) > 0;
+
+    /// <summary>Steps the player's volume; returns the new level, or null if it couldn't be changed.</summary>
+    public double? NudgeVolume(double delta)
+    {
+        if (Volume is not { } v) return null;
+        double nv = Math.Clamp(Math.Round((v + delta) * 50) / 50, 0, 1);
+        return SetVolume(nv) ? nv : null;
+    }
+
     public async Task NextAsync() { if (_session is not null) try { await _session.TrySkipNextAsync(); } catch (Exception) { } }
     public async Task PrevAsync() { if (_session is not null) try { await _session.TrySkipPreviousAsync(); } catch (Exception) { } }
 

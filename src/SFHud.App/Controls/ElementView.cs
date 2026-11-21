@@ -549,6 +549,26 @@ public sealed class ElementView : Grid
             sp.Children.Add(track);
             sp.Children.Add(_mediaTime);
         }
+        // Volume of the player app (the Windows mixer slider for it), adjustable in customize mode / companion.
+        if (_ctx.Interactive && m.HasSession && m.Volume is { } vol)
+        {
+            var vrow = new DockPanel { Margin = new Thickness(0, Fs * 0.35, 0, 0) };
+            var vic = Ui.Icon("", Fs * 0.85, "B.Dim");
+            vic.Margin = new Thickness(0, 0, 6, 0);
+            vic.VerticalAlignment = VerticalAlignment.Center;
+            DockPanel.SetDock(vic, Dock.Left);
+            var pct = T($"{vol:P0}", Fs * 0.68, Dim, Mono);
+            pct.MinWidth = Fs * 2.6;
+            pct.TextAlignment = TextAlignment.Right;
+            pct.VerticalAlignment = VerticalAlignment.Center;
+            DockPanel.SetDock(pct, Dock.Right);
+            var sl = new Slider { Minimum = 0, Maximum = 1, Value = vol, SmallChange = 0.02, LargeChange = 0.1, IsMoveToPointEnabled = true, VerticalAlignment = VerticalAlignment.Center, ToolTip = "Music volume (only the player app, not the game)" };
+            sl.ValueChanged += (_, e) => { m.SetVolume(e.NewValue); pct.Text = $"{e.NewValue:P0}"; };
+            vrow.Children.Add(vic);
+            vrow.Children.Add(pct);
+            vrow.Children.Add(sl);
+            sp.Children.Add(vrow);
+        }
         if (m.PlayingElsewhere.Length > 0 && m.PlayingElsewhereMode is { } other)
         {
             var hint = T($"{m.PlayingElsewhere} is playing" + (_ctx.Interactive ? " · click to listen" : ""), Fs * 0.68, ThemeManager.Brush("B.Amber"), Mono);

@@ -402,7 +402,7 @@ public sealed partial class DefconService : Observable
     }
 
     /// <summary>Auto-switching by the local AI is on (Pro, model installed, both switches on).</summary>
-    private static bool AiAuto => Det.Enabled && Det.AiAssist && Det.AiAutoApply && LocalAi.Instance.CanRun;
+    private static bool AiAuto => Det.Enabled && Det.AiAssist && Det.AiAutoApply && LocalAi.Instance.CanAutoUse; // not while you've unloaded the model
 
     /// <summary>Gives the AI the newest console / screen / status text, only when there is something new in it.</summary>
     private async Task AiWatchAsync()

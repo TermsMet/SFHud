@@ -159,6 +159,9 @@ public partial class LauncherWindow
                 ? Ui.Text(sub, 12, "B.Dim", wrap: false) : Ui.Spacer(0),
             elsewhere,
             SourceChips(),
+            m.HasSession && m.Volume is { } vol
+                ? Ui.Slider("Volume", 0, 1, vol, v => $"{v:P0}", v => m.SetVolume(v), $"Only the player app's volume (Windows mixer), not the game. Hotkeys: {Gesture("media.volup")} / {Gesture("media.voldown")}", 0.02)
+                : Ui.Spacer(0),
             Ui.Spacer(4),
             Ui.Wrap(
                 Ui.IconButton("", "Previous", () => _ = m.PrevAsync()),

@@ -433,6 +433,12 @@ public partial class LauncherWindow : Window
             case "media.playpause": _ = MediaService.Instance.PlayPauseAsync(); break;
             case "media.next": _ = MediaService.Instance.NextAsync(); break;
             case "media.prev": _ = MediaService.Instance.PrevAsync(); break;
+            case "media.volup": case "media.voldown":
+                {
+                    var nv = MediaService.Instance.NudgeVolume(action == "media.volup" ? 0.05 : -0.05);
+                    _overlay.ShowToast("MUSIC", nv is { } v ? $"Volume {v:P0}" : "No player audio to change. Start the music first.");
+                    break;
+                }
             case "media.toggleui": ToggleMediaUi(); break;
             case "video.playpause": if (VideoHub.Current is { } vp) { vp.Toggle(); _overlay.ShowToast("VIDEO", vp.Playing ? "Playing" : "Paused"); } else _overlay.ShowToast("VIDEO", "No video on this page. Add a Video element in customize mode."); break;
             default:

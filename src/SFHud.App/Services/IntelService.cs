@@ -344,7 +344,7 @@ public sealed partial class IntelService : Observable
     {
         if (!DataStore.Settings.IntelAiEnabled || _aiRunning || _linesSinceAi < 3) return;
         if (DateTime.Now - _lastAiAt < AiMinGap) return;
-        if (!LocalAi.Instance.CanRun) return;
+        if (!LocalAi.Instance.CanAutoUse) return; // not while you've unloaded the model
         _ = AnalyzeAsync();
     }
 

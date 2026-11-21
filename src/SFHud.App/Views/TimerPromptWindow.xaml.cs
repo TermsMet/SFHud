@@ -33,7 +33,7 @@ public partial class TimerPromptWindow : Window
             Presets.Children.Add(b);
         }
 
-        Loaded += (_, _) => { Activate(); InputBox.Focus(); Keyboard.Focus(InputBox); UpdatePreview(); };
+        Loaded += (_, _) => { SFHud.Interop.GameScreen.CenterOnGame(this, _target); Activate(); InputBox.Focus(); Keyboard.Focus(InputBox); UpdatePreview(); };
         Deactivated += (_, _) => SafeClose();
     }
 
