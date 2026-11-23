@@ -11,7 +11,7 @@
 - [Music player](#music-player)
 - [Crosshair](#crosshair)
 - [Look & themes](#look--themes)
-- [Free edition limits](#free-edition-limits)
+- [One full version](#free-edition-limits)
 
 ---
 

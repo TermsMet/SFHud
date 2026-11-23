@@ -40,7 +40,7 @@ public sealed class InstallerWindow : Window
         DockPanel.SetDock(close, Dock.Right);
         head.Children.Add(close);
         head.Children.Add(logo);
-        head.Children.Add(Ui.Stack(Ui.H1("SFHUD"), Ui.Label($"{Installer.ThisEdition.ToUpperInvariant()}  ·  VERSION {AppInfo.Version}  ·  {(uninstall ? "UNINSTALL" : "SETUP")}")));
+        head.Children.Add(Ui.Stack(Ui.H1("SFHUD"), Ui.Label($"FULL VERSION {AppInfo.Version}  ·  {(uninstall ? "UNINSTALL" : "SETUP")}")));
         head.MouseLeftButtonDown += (_, e) => { if (e.ButtonState == MouseButtonState.Pressed) try { DragMove(); } catch (InvalidOperationException) { } };
 
         var sp = new StackPanel();
@@ -62,7 +62,7 @@ public sealed class InstallerWindow : Window
         _body.Children.Add(Ui.Text(existing is null
             ? "SFHud is a lightweight overlay and note pad companion for Garry's Mod roleplay. Setup installs it for your Windows account only, so no admin rights are needed."
             : existing.Edition != Installer.ThisEdition
-                ? $"SFHud {existing.Edition} {existing.Version} is installed. Setup will replace it with SFHud {Installer.ThisEdition} {AppInfo.Version}: the program files are swapped, and your notes, layouts, settings, keybinds, sounds and backups are kept and carried over."
+                ? $"SFHud {existing.Edition} {existing.Version} is installed. Setup will replace it with the full version of SFHud {AppInfo.Version}: the program files are swapped, and your notes, layouts, settings, keybinds, sounds and backups are kept and carried over."
                 : $"SFHud {existing.Version} is already installed. Setup will update it to {AppInfo.Version}. Your notes, settings, keybinds and backups are kept.", 13));
         _body.Children.Add(Ui.Spacer(14));
         _body.Children.Add(Ui.Label("INSTALL FOLDER"));

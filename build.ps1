@@ -8,9 +8,9 @@
     AI Core page on demand (it lives in %LOCALAPPDATA%\SFHud, not next to the exe).
 
     Output:
-      publish\SFHud-<Edition>-v<version>-win-x64\SFHud.exe   (+ README.md, CHANGELOG.md)
-      dist\SFHud-<Edition>-Setup-<version>.exe     installer (same exe; the name starts setup mode)
-      dist\SFHud-<Edition>-v<version>-win-x64.zip  portable
+      publish\SFHud-v<version>-win-x64\SFHud.exe   (+ README.md, CHANGELOG.md)
+      dist\SFHud-Setup-<version>.exe     installer (same exe; the name starts setup mode)
+      dist\SFHud-v<version>-win-x64.zip  portable
       dist\*.sha256
 
 .EXAMPLE
@@ -25,9 +25,18 @@ param(
     [ValidateSet('Release', 'Debug')]
     [string]$Configuration = 'Release',
 
-    # One free edition with every feature (the name is kept for the output files).
-    [ValidateSet('Free')]
-    [string]$Edition = 'Free',
+    # Kept so old command lines still work; there is one full edition and the output files carry no edition name.
+    [string]$Edition = '',
+
+    # Code signing (removes "Unknown publisher" and builds SmartScreen reputation). Needs a certificate
+    # from a trusted CA; a self-signed one does NOT help. Any one of these turns signing on:
+    #   -SignThumbprint <sha1>       a code-signing cert in Cert:\CurrentUser\My (or env SFHUD_SIGN_THUMBPRINT)
+    #   env SFHUD_SIGN_PFX (+ SFHUD_SIGN_PFX_PASSWORD)   a .pfx file
+    #   env SFHUD_SIGN_DLIB + SFHUD_SIGN_METADATA        Azure Artifact (Trusted) Signing dlib + metadata.json
+    [string]$SignThumbprint = $env:SFHUD_SIGN_THUMBPRINT,
+    [string]$TimestampUrl = 'http://timestamp.digicert.com',
+    # Fail instead of shipping an unsigned exe.
+    [switch]$RequireSigning,
 
     [ValidateSet('win-x64', 'win-arm64')]
     [string]$Runtime = 'win-x64',
@@ -75,7 +84,7 @@ Ok ($has10 | Select-Object -Last 1)
 [xml]$csproj = Get-Content $project
 $version = ($csproj.Project.PropertyGroup | ForEach-Object { $_.Version } | Where-Object { $_ }) | Select-Object -First 1
 if (-not $version) { $version = '0.0.0' }
-$name = "SFHud-$Edition-v$version-$Runtime"
+$name = "SFHud-v$version-$Runtime"
 if ($FrameworkDependent) { $name += '-fxdep' }
 $outDir = Join-Path $root "publish\$name"
 $distDir = Join-Path $root 'dist'
@@ -129,7 +138,6 @@ $publishArgs = @(
     '-p:DebugType=none',
     '-p:SatelliteResourceLanguages=en',
     "-p:PublishReadyToRun=$(if ($ReadyToRun) { 'true' } else { 'false' })",
-    "-p:Edition=$Edition",
     '-nologo'
 )
 $sw = [Diagnostics.Stopwatch]::StartNew()
@@ -140,6 +148,29 @@ Ok ("Published in {0:N1} s" -f $sw.Elapsed.TotalSeconds)
 $exe = Join-Path $outDir 'SFHud.exe'
 if (-not (Test-Path $exe)) { Fail "SFHud.exe was not produced in $outDir" }
 Copy-Item (Join-Path $root 'README.md'), (Join-Path $root 'CHANGELOG.md') $outDir -Force
+
+# ---------------------------------------------------------------- signing
+Step 'Code signing'
+$signArgs = $null
+if ($SignThumbprint) { $signArgs = @('/sha1', $SignThumbprint, '/s', 'My') }
+elseif ($env:SFHUD_SIGN_PFX) {
+    $signArgs = @('/f', $env:SFHUD_SIGN_PFX)
+    if ($env:SFHUD_SIGN_PFX_PASSWORD) { $signArgs += @('/p', $env:SFHUD_SIGN_PFX_PASSWORD) }
+}
+elseif ($env:SFHUD_SIGN_DLIB -and $env:SFHUD_SIGN_METADATA) { $signArgs = @('/dlib', $env:SFHUD_SIGN_DLIB, '/dmdf', $env:SFHUD_SIGN_METADATA) }
+
+if ($signArgs) {
+    $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue |
+        Sort-Object FullName -Descending | Select-Object -First 1
+    if (-not $signtool) { Fail 'signtool.exe not found. Install the Windows SDK (Signing Tools).' }
+    & $signtool.FullName sign /fd SHA256 /tr $TimestampUrl /td SHA256 /d 'SFHud' /du 'https://github.com/TermsMet/SFHud' @signArgs $exe
+    if ($LASTEXITCODE -ne 0) { Fail "signtool failed (exit $LASTEXITCODE)." }
+    $sig = Get-AuthenticodeSignature $exe
+    if ($sig.Status -ne 'Valid') { Fail "The signature isn't valid: $($sig.StatusMessage)" }
+    Ok "Signed by $($sig.SignerCertificate.Subject)"
+}
+elseif ($RequireSigning) { Fail 'No signing certificate configured (see the Sign* notes at the top of build.ps1).' }
+else { Write-Host '  Not signed (no certificate configured). Windows will show "Unknown publisher" / SmartScreen.' -ForegroundColor Yellow }
 
 # ---------------------------------------------------------------- zip
 $zip = $null
@@ -162,10 +193,10 @@ $setup = $null
 if (-not $NoSingleFile -and -not $FrameworkDependent) {
     Step 'Installer'
     New-Item -ItemType Directory -Force -Path $distDir | Out-Null
-    $setup = Join-Path $distDir "SFHud-$Edition-Setup-$version.exe"
+    $setup = Join-Path $distDir "SFHud-Setup-$version.exe"
     Copy-Item $exe $setup -Force
     $sh = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
-    "$sh  SFHud-$Edition-Setup-$version.exe" | Set-Content -Path "$setup.sha256" -Encoding ascii
+    "$sh  SFHud-Setup-$version.exe" | Set-Content -Path "$setup.sha256" -Encoding ascii
     Ok "$setup"
     Ok "SHA-256 $sh"
 }

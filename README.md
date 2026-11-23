@@ -32,7 +32,7 @@
 
 SFHud is a **click-through overlay** for Star Wars RP, Zombie Survival, Military RP, DarkRP or any other server. It works over any game in borderless or windowed mode. Nothing is injected into the game and SFHud never reads game memory, so it is safe to run next to anti-cheat.
 
-This repository holds **SFHud Free**, the open-source edition. It works fully on its own, with no account and no time limit.
+This repository holds the **full version of SFHud**, free and open source: every feature, no account, no license and no time limit. Donating on Ko-fi is optional.
 
 ## Download
 
@@ -161,6 +161,6 @@ If SFHud helps you, you can support it on [Ko-fi](https://ko-fi.com/theslorb) (t
 
 ## License
 
-SFHud Free is released under the **[GNU General Public License v3.0](LICENSE)**.
+SFHud is released under the **[GNU General Public License v3.0](LICENSE)**.
 
 <p align="center"><sub>Enjoying SFHud? <a href="https://ko-fi.com/theslorb">Support it on Ko-fi</a> ☕</sub></p>

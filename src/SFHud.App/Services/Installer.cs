@@ -17,7 +17,7 @@ namespace SFHud.Services;
 public static class Installer
 {
     public const string UninstallKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\SFHud";
-    public const string Publisher = "SFHud";
+    public const string Publisher = "TermsMet";
 
     public static string DefaultDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "SFHud");
     public static string StartMenuLink => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "SFHud.lnk");
@@ -25,8 +25,8 @@ public static class Installer
 
     public sealed record Existing(string Dir, string Version, string Edition);
 
-    /// <summary>"Free" or "Pro": the edition this exe was built as.</summary>
-    public static string ThisEdition => "Free";
+    /// <summary>The edition this exe was built as. There is only one now: the full version.</summary>
+    public static string ThisEdition => "Full";
 
     /// <summary>Program files older or other-edition builds may have left in the install folder (a folder
     /// build, a half-finished update). Only these exact names are removed, never anything else in the folder,

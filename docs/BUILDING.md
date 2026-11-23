@@ -32,8 +32,8 @@ This produces:
 | Output | Path |
 |---|---|
 | Single-file exe | `publish\…\SFHud.exe` |
-| Installer | `dist\SFHud-Free-Setup-<version>.exe` |
-| Portable zip | `dist\SFHud-Free-v<version>-win-x64.zip` |
+| Installer | `dist\SFHud-Setup-<version>.exe` |
+| Portable zip | `dist\SFHud-v<version>-win-x64.zip` |
 | Checksums | `dist\*.sha256` |
 
 ### `build.ps1` flags

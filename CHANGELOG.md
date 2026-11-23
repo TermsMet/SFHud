@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.1
+
+### One full version
+- Releases are now just **SFHud**: one full version with every feature, free for everyone. The downloads are `SFHud-Setup-<version>.exe` and `SFHud-v<version>-win-x64.zip` (no more "Free" in the names), and setup says **FULL VERSION**.
+- Donating on Ko-fi stays completely optional; nothing is locked behind it.
+- Installing over SFHud Free or Pro 1.2.x or 1.3.0 replaces it and keeps all your notes, layouts and settings.
+
+### Publisher details
+- The exe now carries its publisher, copyright and description (file Properties › Details), and Apps & Features lists the publisher as **TermsMet**.
+- The build can code-sign SFHud with a trusted certificate, which removes the "Unknown publisher" warning. Until a certificate is in place, SmartScreen may still ask you to click **More info › Run anyway**.
+
 ## 1.3.0
 
 ### Everything is free
