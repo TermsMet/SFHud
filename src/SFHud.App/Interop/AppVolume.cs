@@ -18,8 +18,15 @@ internal static class AppVolume
     [ComImport, Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IMMDeviceEnumerator
     {
-        int EnumAudioEndpoints(int dataFlow, int stateMask, out IntPtr devices);
+        int EnumAudioEndpoints(int dataFlow, int stateMask, out IMMDeviceCollection devices);
         int GetDefaultAudioEndpoint(int dataFlow, int role, out IMMDevice endpoint);
+    }
+
+    [ComImport, Guid("0BD7A1BE-7A1A-44DB-8397-CC5392387B5E"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IMMDeviceCollection
+    {
+        int GetCount(out int count);
+        int Item(int index, out IMMDevice device);
     }
 
     [ComImport, Guid("D666063F-1587-4E43-81F1-B948E807363F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
@@ -80,18 +87,42 @@ internal static class AppVolume
     {
         if (processes.Count == 0) return 0;
         int n = 0;
-        object? en = null, mgrObj = null;
-        IMMDevice? dev = null;
-        IAudioSessionEnumerator? sessions = null;
+        object? en = null;
+        IMMDeviceCollection? devices = null;
+        var names = new Dictionary<uint, string>();
         try
         {
             en = new MMDeviceEnumeratorCom();
-            if (((IMMDeviceEnumerator)en).GetDefaultAudioEndpoint(0 /* eRender */, 1 /* eMultimedia */, out dev) != 0 || dev is null) return 0;
+            // Every active output, not just the default one: players are often routed to another device.
+            if (((IMMDeviceEnumerator)en).EnumAudioEndpoints(0 /* eRender */, 1 /* DEVICE_STATE_ACTIVE */, out devices) != 0 || devices is null) return 0;
+            devices.GetCount(out int dc);
+            for (int d = 0; d < dc; d++)
+            {
+                if (devices.Item(d, out var dev) != 0 || dev is null) continue;
+                try { n += ForEachOn(dev, processes, names, act); }
+                finally { Marshal.ReleaseComObject(dev); }
+            }
+        }
+        catch (Exception ex) { Log.Warn("app volume: " + ex.Message); }
+        finally
+        {
+            if (devices is not null) Marshal.ReleaseComObject(devices);
+            if (en is not null) Marshal.ReleaseComObject(en);
+        }
+        return n;
+    }
+
+    private static int ForEachOn(IMMDevice dev, IReadOnlyCollection<string> processes, Dictionary<uint, string> names, Action<ISimpleAudioVolume> act)
+    {
+        int n = 0;
+        object? mgrObj = null;
+        IAudioSessionEnumerator? sessions = null;
+        try
+        {
             var iid = typeof(IAudioSessionManager2).GUID;
             if (dev.Activate(ref iid, 23 /* CLSCTX_ALL */, IntPtr.Zero, out mgrObj) != 0) return 0;
             if (((IAudioSessionManager2)mgrObj).GetSessionEnumerator(out sessions) != 0) return 0;
             sessions.GetCount(out int count);
-            var names = new Dictionary<uint, string>();
             for (int i = 0; i < count; i++)
             {
                 if (sessions.GetSession(i, out var s) != 0 || s is null) continue;
@@ -106,13 +137,10 @@ internal static class AppVolume
                 finally { Marshal.ReleaseComObject(s); }
             }
         }
-        catch (Exception ex) { Log.Warn("app volume: " + ex.Message); }
         finally
         {
             if (sessions is not null) Marshal.ReleaseComObject(sessions);
             if (mgrObj is not null) Marshal.ReleaseComObject(mgrObj);
-            if (dev is not null) Marshal.ReleaseComObject(dev);
-            if (en is not null) Marshal.ReleaseComObject(en);
         }
         return n;
     }

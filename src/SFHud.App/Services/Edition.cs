@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace SFHud.Services;
 
-/// <summary>Everything SFHud Pro unlocks. The Upgrade page's comparison table is built from this list.</summary>
+/// <summary>Features that used to be a paid add-on. All of them are free now; the list stays so
+/// feature checks and descriptions keep working in one place.</summary>
 public enum ProFeature
 {
     LocalAi,
@@ -18,72 +19,48 @@ public enum ProFeature
 }
 
 /// <summary>
-/// Free vs Pro. The free edition is complete on its own and open source; Pro is a one-time purchase
-/// (a separate download, activated with a license key) that adds the features in <see cref="ProFeature"/>.
-/// Nothing a free user made is ever deleted: over-limit pages and profiles are kept, just locked.
+/// SFHud is one free, open-source edition with every feature. There is no license, account or
+/// hardware-id check of any kind. Support development with a donation (Ko-fi) if you like it.
 /// </summary>
 public static class Edition
 {
-    public const bool IsProBuild = false;
+    /// <summary>Ko-fi page for donations.</summary>
+    public const string DonateUrl = AppInfo.DonateUrl;
 
-    /// <summary>Built-in presets ship with up to 4 pages, so free users always have room for one of their own.</summary>
-    public const int FreePages = 5;
-    public const int FreeProfiles = 1;
+    /// <summary>Public source and releases (also where updates come from).</summary>
+    public const string RepoUrl = "https://github.com/TermsMet/SFHud";
 
-    /// <summary>Prices shown in the app (the store page is the source of truth).</summary>
-    public const string PriceLifetime = "$30";
-    public const string PriceMonthly = "$5";
-    /// <summary>Short form for buttons: "$30 once or $5/month".</summary>
-    public const string Price = PriceLifetime + " once or " + PriceMonthly + "/month";
-    /// <summary>The SFHud website (store, Pro add-on download, trial offers). Change when you move to your own domain.</summary>
-    public const string SiteUrl = "https://sfhud.site";
-    public const string BuyUrl = SiteUrl + "/store";
-    /// <summary>Where Pro is explained / downloaded (the receipt also has the download).</summary>
-    public const string ProInfoUrl = SiteUrl + "/download";
+    /// <summary>Always true: everything is included.</summary>
+    public static bool Unlocked => true;
 
-    private static bool _unlocked;
-
-    /// <summary>True in a Pro build with an active (or within-grace) license. Set by the license service.</summary>
-    public static bool Unlocked
-    {
-        get => IsProBuild && _unlocked;
-        set { if (_unlocked == value) return; _unlocked = value; Changed?.Invoke(); }
-    }
-
+#pragma warning disable CS0067 // kept so older call sites compile; nothing changes at runtime anymore
     public static event Action? Changed;
+#pragma warning restore CS0067
 
-    /// <summary>Features that are switched off in every edition for now (kept in the code for later).</summary>
     public static bool Available(ProFeature f) => true;
+    public static bool Has(ProFeature f) => true;
 
-    public static bool Has(ProFeature f) => Available(f) && Unlocked;
+    public static string Name => "SFHud";
 
-    public static string Name => Unlocked ? "SFHud Pro" : IsProBuild ? "SFHud Pro (not activated)" : "SFHud Free";
+    public static bool CanAddPage(int existing) => true;
+    public static bool CanAddProfile(int existing) => true;
+    public static bool PageUsable(int index) => true;
+    public static bool ProfileUsable(int index) => true;
 
-    public static bool CanAddPage(int existing) => Has(ProFeature.UnlimitedPages) || existing < FreePages;
-    public static bool CanAddProfile(int existing) => Has(ProFeature.UnlimitedProfiles) || existing < FreeProfiles;
-
-    /// <summary>Pages past the free limit stay on disk and visible in lists, but can't be shown or edited.</summary>
-    public static bool PageUsable(int index) => Has(ProFeature.UnlimitedPages) || index < FreePages;
-    public static bool ProfileUsable(int index) => Has(ProFeature.UnlimitedProfiles) || index < FreeProfiles;
-
-    public static readonly IReadOnlyList<(ProFeature Feature, string Name, string Free, string Pro)> Table = new[]
+    public static string Describe(ProFeature f) => f switch
     {
-        (ProFeature.LocalAi, "Local AI assistant", "—", "Offline AI: briefing summaries, note ideas, labels, chat summary, ask anything"),
-        (ProFeature.DefconAutoDetect, "DEFCON auto-detection", "Manual, keys, console.log + paste suggestions", "Reads the level off the screen (verified), status URL"),
-        (ProFeature.LevelLayouts, "Layout and notes per DEFCON level", "—", "Overlay switches page and shows that level's note pad by itself when the level changes"),
-        (ProFeature.Video, "Video on the overlay", "—", "Local files or video links, muted, pauses out of game"),
-        (ProFeature.UnlimitedPages, "Overlay pages", $"{FreePages} per preset", "Unlimited"),
-        (ProFeature.UnlimitedProfiles, "Profiles", $"{FreeProfiles}", "Unlimited (Main RP, Training, Event…)"),
-        (ProFeature.CustomThemes, "Custom themes", "All built-in themes", "Theme editor and background image"),
-        (ProFeature.Companion, "Companion window", "—", "Your overlay as a normal window for a second screen"),
+        ProFeature.LocalAi => "Local AI assistant",
+        ProFeature.DefconAutoDetect => "DEFCON auto-detection",
+        ProFeature.LevelLayouts => "Layout and notes per DEFCON level",
+        ProFeature.Video => "Video on the overlay",
+        ProFeature.UnlimitedPages => "Overlay pages",
+        ProFeature.UnlimitedProfiles => "Profiles",
+        ProFeature.CustomThemes => "Custom themes",
+        ProFeature.Companion => "Companion window",
+        ProFeature.ChatAlerts => "Chat alerts",
+        _ => f.ToString(),
     };
 
-    public static string Describe(ProFeature f)
-    {
-        foreach (var r in Table) if (r.Feature == f) return r.Name;
-        return f.ToString();
-    }
-
-    /// <summary>Set by the main window: opens the Upgrade page (from any PRO chip).</summary>
+    /// <summary>No upgrade page anymore; kept null so old feature chips do nothing.</summary>
     public static Action<ProFeature?>? ShowUpgrade { get; set; }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -33,7 +33,7 @@ public partial class LauncherWindow
         var u = Announcements.Instance.Latest;
         if (u is null || _updateBarHidden == u.Version) { if (!_updating) UpdateBar.Visibility = Visibility.Collapsed; return; }
         bool first = UpdateBar.Visibility != Visibility.Visible;
-        UpdateBarTitle.Text = $"SFHud {(Edition.IsProBuild ? "Pro" : "Free")} {u.Version} is available · you have {AppInfo.Version}";
+        UpdateBarTitle.Text = $"SFHud {u.Version} is available · you have {AppInfo.Version}";
         if (!_updating) UpdateBarText.Text = u.Title.Length > 0 ? u.Title + " · updating keeps all your notes, layouts and settings." : "Updating keeps all your notes, layouts and settings.";
         UpdateBar.Visibility = Visibility.Visible;
         if (first && _overlay.InGame) _overlay.ShowToast("UPDATE", $"SFHud {u.Version} is available. Open SFHud ({Gesture("dashboard.open")}) to update.");

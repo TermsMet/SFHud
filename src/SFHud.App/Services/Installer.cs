@@ -26,7 +26,7 @@ public static class Installer
     public sealed record Existing(string Dir, string Version, string Edition);
 
     /// <summary>"Free" or "Pro": the edition this exe was built as.</summary>
-    public static string ThisEdition => Services.Edition.IsProBuild ? "Pro" : "Free";
+    public static string ThisEdition => "Free";
 
     /// <summary>Program files older or other-edition builds may have left in the install folder (a folder
     /// build, a half-finished update). Only these exact names are removed, never anything else in the folder,
@@ -124,7 +124,7 @@ public static class Installer
         progress("Registering with Windows");
         using (var k = Registry.CurrentUser.CreateSubKey(UninstallKey))
         {
-            k.SetValue("DisplayName", Services.Edition.IsProBuild ? "SFHud Pro" : "SFHud");
+            k.SetValue("DisplayName", "SFHud");
             k.SetValue("Edition", ThisEdition);
             k.SetValue("DisplayVersion", AppInfo.Version);
             k.SetValue("Publisher", Publisher);

@@ -11,7 +11,7 @@
     <RootNamespace>SFHud</RootNamespace>
     <PlatformTarget>x64</PlatformTarget>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>1.2.3</Version>
+    <Version>1.3.0</Version>
     <Product>SFHud</Product>
     <Company>SFHud</Company>
     <AssemblyTitle>SFHud</AssemblyTitle>
@@ -38,17 +38,7 @@
     <DebugType>none</DebugType>
   </PropertyGroup>
 
-  <!--
-    Editions: Free (default, open source) or Pro (dotnet build -p:Edition=Pro, or build.ps1 -Edition Pro).
-    Pro defines SFHUD_PRO and compiles the Pro\ folder (license activation), which isn't in the public repo.
-  -->
-  <PropertyGroup>
-    <Edition Condition="'$(Edition)' == ''">Free</Edition>
-    <DefineConstants Condition="'$(Edition)' == 'Pro'">$(DefineConstants);SFHUD_PRO</DefineConstants>
-  </PropertyGroup>
-  <ItemGroup Condition="'$(Edition)' != 'Pro'">
-    <Compile Remove="Pro\**" />
-  </ItemGroup>
+  <!-- One free edition with every feature (no license code). -->
 
   <ItemGroup>
     <!-- Regenerate with tools/make-icon.ps1 (build.ps1 does it when assets/icon.png changes). -->

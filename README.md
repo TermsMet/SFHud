@@ -148,9 +148,11 @@ You can rebind every key. The full list is in **[docs/KEYBINDS.md](docs/KEYBINDS
 | [Building from source](docs/BUILDING.md) | SDK, build script flags, command-line switches |
 | [Contributing](CONTRIBUTING.md) | How to send changes |
 
-## SFHud Pro
+## Free, with everything
 
-SFHud Free is complete on its own. **SFHud Pro** is an optional paid upgrade from [sfhud.site](https://sfhud.site) that pays for development. It adds an offline local AI, DEFCON auto-detection, a layout per DEFCON level, video on the overlay, unlimited pages and profiles, custom themes, a companion window and event alerts from chat. Pro is closed source and is not part of this repository.
+SFHud is free and open source, with every feature included: the offline local AI, DEFCON auto-detection, a layout per DEFCON level, video on the overlay, unlimited pages and profiles, custom themes, a companion window and event alerts from chat. There's no paid edition, no license key and no account.
+
+If SFHud helps you, you can support it on [Ko-fi](https://ko-fi.com/theslorb) (the **DONATE** button in the app opens it). Completely optional.
 
 ## Credits
 

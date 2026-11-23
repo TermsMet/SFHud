@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -32,7 +32,6 @@ public partial class LauncherWindow : Window
         ("presets", "Presets", "Server presets and personal profiles"),
         ("games", "Games & servers", "Which apps get the overlay, favourite servers"),
         ("settings", "Settings", "Appearance, sounds, music, behaviour, data and backups"),
-        ("pro", "SFHud Pro", "One-time upgrade: local AI, DEFCON auto-detection, videos, unlimited pages and profiles"),
     };
 
     private readonly Dictionary<string, RadioButton> _nav = new();
@@ -102,8 +101,6 @@ public partial class LauncherWindow : Window
         };
         NotePadView.PopOut = n => { EngageIfNeeded(); bool on = _overlay.TogglePinnedNote(n); _overlay.ShowToast("NOTE", on ? "Pinned on the overlay · move it in customize mode" : "Taken off the overlay"); return on; };
         NotePadView.IsPoppedOut = n => _overlay.IsNotePinned(n);
-        Edition.ShowUpgrade = ShowUpgrade;
-        Edition.Changed += () => Dispatcher.BeginInvoke(() => { UpdateEditionBadge(); _overlay.Refresh(); RenderPage(); });
         _overlay.IsMainWindow = h => { var me = new System.Windows.Interop.WindowInteropHelper(this).Handle; return h == me || NativeMethods.GetAncestor(h, NativeMethods.GA_ROOTOWNER) == me; };
         _tick.Tick += (_, _) => OnTick();
 
@@ -133,8 +130,6 @@ public partial class LauncherWindow : Window
         DefconService.Instance.GameWindow = () => GameLocator.Find(Target);
         DefconService.Instance.GameInFront = () => _gameInFront;
         DefconService.Instance.Start();
-        UpdateEditionBadge();
-        StartTrialOffers();
         StartAnnouncements();
         LocalAi.Instance.RefreshInstalled();
         _ = MediaService.Instance.StartAsync();
@@ -384,7 +379,6 @@ public partial class LauncherWindow : Window
             "presets" => PresetsPage(),
             "games" => GamesPage(),
             "settings" => SettingsPage(),
-            "pro" => ProPage(),
             _ => HomePage(),
         };
         PageHost.Content = content;
@@ -727,7 +721,8 @@ public partial class LauncherWindow : Window
         if (!ok) ShowBanner("Saving failed. Check that " + SettingsStore.DataDir + " is writable; details are in the log.", sticky: true);
     }
 
-    private void Pro_Click(object sender, RoutedEventArgs e) => ShowUpgrade(null);
+    /// <summary>Title bar DONATE button: opens the Ko-fi page.</summary>
+    private void Donate_Click(object sender, RoutedEventArgs e) => OpenUrl(AppInfo.DonateUrl);
 
     public static void OpenUrl(string url)
     {

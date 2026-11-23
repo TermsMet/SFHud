@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -102,6 +102,9 @@ public partial class LauncherWindow
 
     private static TextBlock Wrapped(TextBlock t) { t.TextWrapping = TextWrapping.Wrap; t.TextTrimming = TextTrimming.None; return t; }
 
+    private string _aiQuestion = "", _aiAnswer = "";
+    private bool _aiWorking, _aiError, _aiCanSave = true;
+
     private FrameworkElement AiPage()
     {
         var sp = new StackPanel();
@@ -113,6 +116,82 @@ public partial class LauncherWindow
                 "Runs fully offline on your CPU (or LM Studio / Ollama on this PC), and never changes anything without your click."))));
             return sp;
         }
+        var ai = LocalAi.Instance;
+        ai.Preload();
+        sp.Children.Add(PageHeader("Local AI", "An offline assistant that runs on your CPU. It never changes DEFCON or your notes without you clicking.",
+            Ui.Button("OPEN IN-GAME AI MENU", OpenAi, "Sf.Button.Small.Primary", Gesture("ai.open"))));
+
+        var install = Ui.Button(ai.State == AiState.Installing ? "PAUSE DOWNLOAD" : "INSTALL · 837 MB", async () =>
+        {
+            if (ai.State == AiState.Installing) { ai.CancelInstall(); return; }
+            await ai.InstallAsync();
+            RenderPage();
+        }, "Sf.Button.Small.Primary");
+        install.Visibility = ai.IsInstalled && ai.State != AiState.Installing ? Visibility.Collapsed : Visibility.Visible;
+        var run = Ui.Button(ai.IsRunning ? "UNLOAD" : ai.State == AiState.Starting ? "LOADING…" : "LOAD MODEL", async () => { if (ai.IsRunning || ai.State == AiState.Starting) ai.Unload(); else await ai.LoadAsync(); RenderPage(); });
+        run.Visibility = ai.CanRun ? Visibility.Visible : Visibility.Collapsed;
+        var remove = Ui.Button("REMOVE", () =>
+        {
+            if (!Ui.Confirm(this, "Remove AI", $"Delete the local model and runtime (~837 MB)?\n\n{LocalAi.ModelPath}", "REMOVE")) return;
+            ai.Uninstall();
+            RenderPage();
+        }, "Sf.Button.Small.Danger");
+        remove.Visibility = ai.IsInstalled && ai.State != AiState.Installing ? Visibility.Visible : Visibility.Collapsed;
+        var bar = new Border { Height = 3, HorizontalAlignment = HorizontalAlignment.Left, Width = Math.Max(0, 300 * ai.Progress) };
+        bar.SetResourceReference(Border.BackgroundProperty, "B.Accent");
+        var core = Card("AI CORE", null,
+            StatusRow("State", ai.StatusText, ai.IsRunning ? "B.Ok" : ai.State == AiState.Error ? "B.Alert" : "B.Accent", null),
+            Wrapped(Ui.Label(ai.BackendText)),
+            ai.UsingExternal ? Ui.Spacer(0) : PathLabel(LocalAi.ModelPath),
+            ai.ProgressText.Length > 0 ? Ui.Stack(Ui.Label(ai.ProgressText), bar) : Ui.Spacer(0),
+            ai.LastError.Length > 0 ? Ui.Text(ai.LastError, 12, "B.Alert") : Ui.Spacer(0),
+            Ui.Spacer(6),
+            Ui.Wrap(install, run, remove),
+            AiSettings.Build(this, showLoad: false));
+
+        // The page rebuilds whenever the AI changes state (loading, thinking…), so the question and the
+        // answer live in fields, not in the controls. Before, a rebuild mid-request threw the answer away.
+        var answer = Ui.Stack();
+        if (_aiWorking) answer.Children.Add(Ui.Hint(_aiAnswer));
+        else if (_aiError) answer.Children.Add(Ui.Text(_aiAnswer, 12.5, "B.Alert"));
+        else if (_aiAnswer.Length > 0)
+        {
+            string text = _aiAnswer;
+            answer.Children.Add(NoteMarkup.Render(text, new MarkupOptions { FontSize = 13, Foreground = ThemeManager.Brush("B.Text"), Accent = ThemeManager.Brush("B.Accent"), Dim = ThemeManager.Brush("B.Dim") }));
+            if (_aiCanSave)
+                answer.Children.Add(Ui.Wrap(
+                    Ui.Button("ADD AS NOTE", () => { Pads.Add(Pads.Current, text); ShowBanner($"Added to \"{Pads.Current.Title}\"."); }, "Sf.Button.Small.Primary"),
+                    Ui.Button("COPY", () => { try { Clipboard.SetText(text); } catch (Exception) { } }),
+                    Ui.Button("CLEAR", () => { _aiAnswer = ""; RenderPage(); })));
+        }
+        var box = Ui.TextBox(_aiQuestion, v => _aiQuestion = v);
+        box.ToolTip = "Ask about your notes, the briefing or recent server chat. Enter sends.";
+        async Task Run(Func<Task<string?>> f, string title, bool canSave = true)
+        {
+            if (_aiWorking) return;
+            if (!ai.CanRun) { _aiError = true; _aiAnswer = "Install the model first (INSTALL above), or set an external endpoint below."; RenderPage(); return; }
+            _aiWorking = true; _aiError = false;
+            _aiAnswer = ai.IsRunning ? "Thinking…" : "Loading the model (a few seconds the first time)…";
+            RenderPage();
+            string? r;
+            try { r = await f(); }
+            catch (Exception ex) { r = null; Log.Warn("ai page: " + ex.Message); }
+            _aiWorking = false;
+            if (string.IsNullOrWhiteSpace(r)) { _aiError = true; _aiAnswer = "No answer · " + (ai.LastError.Length > 0 ? ai.LastError : "the model returned nothing. Try rephrasing."); }
+            else { _aiError = false; _aiCanSave = canSave; _aiAnswer = (title.Length > 0 ? title + "\n" : "") + r.Trim(); }
+            if (_page == "ai") RenderPage();
+        }
+        box.KeyDown += async (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; _aiQuestion = box.Text; await Run(() => AiTools.AskAsync(_aiQuestion, Target), ""); } };
+        var ask = Card("ASK", $"Uses the current pad (\"{Pads.Current.Title}\"), DEFCON and recent chat as context.",
+            box,
+            Ui.Wrap(
+                Ui.Button("ASK", async () => { _aiQuestion = box.Text; if (_aiQuestion.Trim().Length > 0) await Run(() => AiTools.AskAsync(_aiQuestion, Target), ""); }, "Sf.Button.Small.Primary"),
+                Ui.Button("SUMMARIZE CURRENT PAD", async () => await Run(() => Pads.Current.Notes.Count == 0 ? Task.FromResult<string?>("This pad is empty.") : AiTools.SummarizeAsync(AiTools.PadText(Pads.Current)), "## Summary")),
+                Ui.Button("ORGANIZE CURRENT PAD", async () => await Run(() => Pads.Current.Notes.Count == 0 ? Task.FromResult<string?>("This pad is empty.") : AiTools.OrganizeAsync(Pads.Current), "")),
+                Ui.Button("WHAT'S THE DEFCON?", async () => await Run(async () => await DefconService.Instance.ScanNowAsync(), "", canSave: false)),
+                Ui.Button("SUMMARIZE CHAT", async () => await Run(async () => await IntelService.Instance.AnalyzeAsync() ? IntelService.Instance.Summary + "\n" + IntelService.Instance.Orders : "No server chat yet (needs console.log), or the model isn't ready.", "## Chat summary"))),
+            answer);
+        sp.Children.Add(Columns(380, core, ask));
         return sp;
     }
 
@@ -547,6 +626,8 @@ public partial class LauncherWindow
             Ui.Label(IntelService.Instance.LogPath is { } lp ? "USING  " + lp : "NOT FOUND · START GMOD WITH -condebug, OR PASTE THE PATH"),
             Ui.Label("FEED  " + IntelService.Instance.FeedStatus)));
 
+        if (Edition.Available(ProFeature.ChatAlerts))
+            sp.Children.Add(Ui.Section("CHAT ALERTS", "Watch server chat for events and staff announcements", _subTab == "chat", ChatAlertsPanel()));
 
         // Data
         var backups = new StackPanel();
@@ -592,7 +673,8 @@ public partial class LauncherWindow
         sp.Children.Add(Ui.Section("ABOUT", $"SFHud {AppInfo.Version}", _subTab == "about",
             Ui.Text($"SFHud {AppInfo.Version} · a lightweight overlay and note pad companion for Garry's Mod roleplay.", 13),
             Ui.Hint("Runs locally. Contacts only addresses you add (servers, status URL, local AI download from Hugging Face / GitHub when you click Install)."),
-            Ui.Wrap(Ui.Button(Edition.Unlocked ? "★ SFHUD PRO · LICENSE" : "★ SFHUD PRO", () => ShowUpgrade(null), "Sf.Button.Small.Primary"),
+            Ui.Wrap(Ui.Button("♥ DONATE ON KO-FI", () => OpenUrl(AppInfo.DonateUrl), "Sf.Button.Small.Primary", tip: "SFHud is free and open source. Donations keep it going."),
+                    Ui.Button("SOURCE ON GITHUB", () => OpenUrl(Edition.RepoUrl)),
                     Ui.Button("INSTALL / UPDATE SFHUD…", () => { try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Environment.ProcessPath!, "--install") { UseShellExecute = false }); } catch (Exception ex) { ShowBanner(ex.Message); } }, tip: "Installs this copy with shortcuts and an uninstall entry.")),
             changelog.Length > 0 ? new Expander { Header = Ui.H2("CHANGELOG", 11), Content = NoteMarkup.Render(changelog.Length > 6000 ? changelog[..6000] + "\n…" : changelog, new MarkupOptions { FontSize = 12.5, Foreground = ThemeManager.Brush("B.Text"), Accent = ThemeManager.Brush("B.Accent"), Dim = ThemeManager.Brush("B.Dim") }) } : Ui.Spacer(0)));
         // Keep sections open across refreshes (a deep link via _subTab opens one too).
@@ -660,7 +742,6 @@ public partial class LauncherWindow
             ("DEFCON levels & detection", "defcon", "", "defcon level detection ocr screen status url"),
             ("Timer presets & sounds", "timers", "", "timer stopwatch preset countdown sound pixabay"),
             ("Local AI", "ai", "", "ai model qwen llm summarize ask lm studio ollama"),
-            ("SFHud Pro", "pro", "", "pro upgrade buy purchase license key activate unlock"),
             ("Presets & profiles", "presets", "", "preset profile server swrp zombie military general import export"),
             ("Games & servers", "games", "", "game target gmod server favourite connect"),
         };

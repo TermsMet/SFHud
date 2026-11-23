@@ -103,13 +103,6 @@ Choose from 12 shapes and set the colour, size, thickness, gap, opacity, centre 
 - You can also set an accent colour, window opacity, chamfered, rounded or square corners, fonts, text scale, animations, scanlines and a compact sidebar.
 - **Global search** (Ctrl+F) covers notes, settings, keybinds, pages and presets.
 
-## Free edition limits
+## Everything is included
 
-SFHud Free is the complete app, with two limits:
-
-| | Free |
-|---|---|
-| Overlay pages | 5 per preset |
-| Profiles | 1 |
-
-Pro features (local AI, DEFCON auto-detection, video, custom themes, companion window and more) are shown faded in the app. They aren't part of this source code.
+SFHud has one free edition with every feature and no limits on pages or profiles. The **DONATE** button in the title bar opens Ko-fi if you'd like to support development.

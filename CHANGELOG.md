@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.0
+
+### Everything is free
+- There is no paid edition any more. Everything that used to be SFHud Pro is now in the one free, open-source SFHud: the offline local AI, DEFCON auto-detection (screen reading and status URL), a layout per DEFCON level, video on the overlay, unlimited pages and profiles, custom themes, the companion window and chat alerts.
+- No license keys, trials, accounts or hardware IDs. SFHud never checks a license and works fully offline.
+- If you were on SFHud Pro, installing 1.3.0 replaces it and keeps all your notes, layouts and settings.
+- The **GET PRO** button in the title bar is now **DONATE**, which opens Ko-fi. Donations are optional and keep development going. Settings › About has a donate button and a link to the source on GitHub.
+
+### Updates come from GitHub
+- The update bar now checks the GitHub releases (github.com/TermsMet/SFHud) instead of the website. Updates are still checked against the published SHA-256 before they run.
+
+### Music volume works with more setups
+- The volume slider now finds the music app on every audio output, not only the default one, so players routed to headphones or another device can be adjusted too.
+
 ## 1.2.3
 
 ### Note pad: select and copy text

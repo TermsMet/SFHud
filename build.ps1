@@ -10,7 +10,7 @@
     Output:
       publish\SFHud-<Edition>-v<version>-win-x64\SFHud.exe   (+ README.md, CHANGELOG.md)
       dist\SFHud-<Edition>-Setup-<version>.exe     installer (same exe; the name starts setup mode)
-      dist\SFHud-<Edition>-v<version>-win-x64.zip  portable   (Edition = Free or Pro)
+      dist\SFHud-<Edition>-v<version>-win-x64.zip  portable
       dist\*.sha256
 
 .EXAMPLE
@@ -19,16 +19,14 @@
     .\build.ps1 -FrameworkDependent  # small build that needs the .NET 10 Desktop Runtime
 .EXAMPLE
     .\build.ps1 -StopRunning -Run    # close a running published SFHud first, launch the new one after
-.EXAMPLE
-    .\build.ps1 -Edition Pro         # the paid, license-activated build (SFHud-Pro-...)
 #>
 [CmdletBinding()]
 param(
     [ValidateSet('Release', 'Debug')]
     [string]$Configuration = 'Release',
 
-    # Free (open source) or Pro (license-activated, needs src\SFHud.App\Pro).
-    [ValidateSet('Free', 'Pro')]
+    # One free edition with every feature (the name is kept for the output files).
+    [ValidateSet('Free')]
     [string]$Edition = 'Free',
 
     [ValidateSet('win-x64', 'win-arm64')]
@@ -77,7 +75,6 @@ Ok ($has10 | Select-Object -Last 1)
 [xml]$csproj = Get-Content $project
 $version = ($csproj.Project.PropertyGroup | ForEach-Object { $_.Version } | Where-Object { $_ }) | Select-Object -First 1
 if (-not $version) { $version = '0.0.0' }
-if ($Edition -eq 'Pro' -and -not (Test-Path (Join-Path $root 'src\SFHud.App\Pro\LicenseService.cs'))) { Fail 'The Pro edition needs src\SFHud.App\Pro (not part of the open-source repo).' }
 $name = "SFHud-$Edition-v$version-$Runtime"
 if ($FrameworkDependent) { $name += '-fxdep' }
 $outDir = Join-Path $root "publish\$name"

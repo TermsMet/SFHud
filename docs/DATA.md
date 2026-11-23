@@ -28,7 +28,7 @@ Single pads (`.sfhudpad`) and presets (`.sfhudpreset`) can be shared on their ow
 - Notes, settings and layouts never leave your PC.
 - SFHud doesn't read game memory or inject into any process. The overlay is its own window.
 - SFHud connects to the network only to:
-  - check [sfhud.site](https://sfhud.site) for updates and news posts
+  - check the [GitHub releases](https://github.com/TermsMet/SFHud/releases) for updates
   - read a server status URL or open a link, if you set one up yourself
 
 ## Upgrading from SFHud 0.x

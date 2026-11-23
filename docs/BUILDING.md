@@ -58,7 +58,7 @@ This produces:
 ## Notes
 
 - **Single-file exe**: WPF's three native DLLs can't load from memory, so on first launch they're unpacked once to `%TEMP%\.net\SFHud\`.
-- **Edition**: this source always builds **SFHud Free**. Pro code isn't in the repository. Its features compile to stubs (`Services/FreeStubs.cs`) and are gated by `Services/Edition.cs`.
+- **Edition**: there is one edition with every feature. `Services/Edition.cs` keeps the old feature list, but every check returns true and there is no license code.
 
 ## Project layout
 

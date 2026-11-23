@@ -495,7 +495,7 @@ public static class Ui
         var sp = new StackPanel();
         sp.Children.Add(HStack(Text(Edition.Describe(f), 13, "B.Text", wrap: false), ProChip(f)));
         sp.Children.Add(Hint(pitch));
-        sp.Children.Add(Button($"SEE SFHUD PRO · {Edition.PriceLifetime} OR {Edition.PriceMonthly}/MO", () => Edition.ShowUpgrade?.Invoke(f), "Sf.Button.Small.Primary"));
+
         return sp;
     }
 }

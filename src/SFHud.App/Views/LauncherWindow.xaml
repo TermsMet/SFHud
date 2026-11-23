@@ -69,13 +69,13 @@
                                 <TextBlock x:Name="SaveText" Text="SAVED" FontFamily="{DynamicResource F.Mono}" FontSize="10.5" Foreground="{DynamicResource B.Ok}" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
-                        <Button x:Name="ProButton" Click="Pro_Click" Margin="2,0,10,0" Padding="10,0" Height="26" Cursor="Hand" FocusVisualStyle="{x:Null}"
-                                ToolTip="SFHud Pro: one-time purchase. See what it adds.">
+                        <Button x:Name="DonateButton" Click="Donate_Click" ToolTip="SFHud is free. If you like it, you can support it on Ko-fi." Margin="2,0,10,0" Padding="10,0" Height="26" Cursor="Hand" FocusVisualStyle="{x:Null}">
+
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <c:HudFrame x:Name="Bd" Chamfer="7" ShowBrackets="False" Stroke="{DynamicResource B.Amber}" Fill="{DynamicResource B.Amber.Fill}" Padding="{TemplateBinding Padding}" Opacity="0.85">
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <TextBlock Text="&#x2605;" FontSize="11" Foreground="{DynamicResource B.Amber}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                            <TextBlock Text="&#x2665;" FontSize="11" Foreground="{DynamicResource B.Amber}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                             <ContentPresenter VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </c:HudFrame>
@@ -86,7 +86,7 @@
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
                             </Button.Template>
-                            <TextBlock x:Name="ProButtonText" Text="GET PRO" FontFamily="{DynamicResource F.Mono}" FontSize="10.5" Foreground="{DynamicResource B.Text}" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="DonateButtonText" Text="DONATE" FontFamily="{DynamicResource F.Mono}" FontSize="10.5" Foreground="{DynamicResource B.Text}" VerticalAlignment="Center"/>
                         </Button>
                         <Button Style="{StaticResource Sf.Button.Caption}" Content="&#xE921;" Click="Minimize_Click" ToolTip="Minimize"/>
                         <Button x:Name="MaxButton" Style="{StaticResource Sf.Button.Caption}" Content="&#xE922;" Click="Maximize_Click" ToolTip="Maximize"/>

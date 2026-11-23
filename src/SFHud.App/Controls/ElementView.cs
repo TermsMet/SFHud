@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -470,13 +470,39 @@ public sealed class ElementView : Grid
         if (El.ShowTitle && El.Title.Length > 0) sp.Children.Add(Header("VIDEO"));
         if (!Edition.Has(ProFeature.Video))
         {
-            sp.Children.Add(T("Videos on the overlay are part of SFHud Pro", Fs * 0.85, Dim, Mono));
+            sp.Children.Add(T("Videos on the overlay are switched off", Fs * 0.85, Dim, Mono));
             return sp;
         }
         if (!_ctx.HostsVideo)
         {
             sp.Children.Add(T(El.VideoSource.Length > 0 ? "▶ " + System.IO.Path.GetFileName(El.VideoSource.Split('?')[0]) + " · plays on the overlay" : "No video picked yet", Fs * 0.85, Dim, Mono));
             return sp;
+        }
+        var player = VideoHub.Get(El);
+        player.Detach();
+        var screen = new Border { Background = Brushes.Black, MinHeight = 60, Child = player.Media, CornerRadius = new CornerRadius(2), ClipToBounds = true };
+        if (El.H > 0) screen.Height = Math.Max(40, El.H - 2 * Math.Clamp(El.Padding, 0, 40) - (El.ShowTitle && El.Title.Length > 0 ? Fs * 2 : 0));
+        else screen.Height = InnerWidth * 9 / 16;
+        if (player.Source.Length == 0 || player.Error.Length > 0)
+        {
+            var g = new Grid();
+            g.Children.Add(screen);
+            g.Children.Add(new TextBlock
+            {
+                Text = player.Error.Length > 0 ? player.Error : "No video yet · pick a file or paste a link in this element's editor",
+                Foreground = Dim, FontSize = Fs * 0.9, FontFamily = Font, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12),
+            });
+            sp.Children.Add(g);
+        }
+        else sp.Children.Add(screen);
+        if (_ctx.Interactive)
+        {
+            var bar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0) };
+            bar.Children.Add(Ui.IconButton(player.Playing ? "" : "", player.Playing ? "Pause" : "Play", () => { player.Toggle(); Build(); }));
+            bar.Children.Add(Ui.IconButton("", "Restart", () => player.Restart()));
+            bar.Children.Add(Ui.IconButton(El.VideoMuted ? "" : "", El.VideoMuted ? "Unmute" : "Mute", () => { player.SetMuted(!El.VideoMuted); Build(); }));
+            sp.Children.Add(bar);
         }
         return sp;
     }

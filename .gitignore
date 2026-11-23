@@ -7,5 +7,4 @@ github-release/
 Github Release/
 .vs/
 *.user
-# SFHud Pro sources are not part of this repository.
-src/SFHud.App/Pro/
+archive/

@@ -999,7 +999,6 @@ public partial class OverlayWindow : Window
     public void SwitchPage(string id, bool toast = false)
     {
         if (P.Pages.All(p => p.Id != id) || P.ActivePageId == id) return;
-        if (!Edition.PageUsable(P.Pages.FindIndex(p => p.Id == id))) { ShowToast("PAGE LOCKED", $"Pages past the first {Edition.FreePages} need SFHud Pro. Your page is kept."); return; }
         P.ActivePageId = id;
         DataStore.MarkDirty();
         _undo.Clear(); _redo.Clear(); _undo.Add(PageJson());
@@ -1020,7 +1019,6 @@ public partial class OverlayWindow : Window
     private void AddPage()
     {
         if (P.Pages.Count >= 30) { ShowToast("PAGES", "Up to 30 pages per preset."); return; }
-        if (!Edition.CanAddPage(P.Pages.Count)) { ShowToast("PAGES", $"SFHud Free has {Edition.FreePages} pages per preset. SFHud Pro removes the limit."); Ui.RequirePro(ProFeature.UnlimitedPages); return; }
         string? name = Ui.Prompt(this, "New overlay page", DataStore.UniqueName("Custom Layout", P.Pages.Select(p => p.Name)));
         if (string.IsNullOrWhiteSpace(name)) return;
         var page = new OverlayPage { Name = name.Trim(), Elements = { ElementCatalog.Create(ElementKind.Strip, 0, 0) } };
@@ -1031,7 +1029,6 @@ public partial class OverlayWindow : Window
 
     private void DuplicatePage(OverlayPage src)
     {
-        if (!Edition.CanAddPage(P.Pages.Count)) { ShowToast("PAGES", $"SFHud Free has {Edition.FreePages} pages per preset. SFHud Pro removes the limit."); Ui.RequirePro(ProFeature.UnlimitedPages); return; }
         var page = DataStore.DeepClone(src);
         page.Id = Ids.New();
         page.Name = DataStore.UniqueName(src.Name + " copy", P.Pages.Select(p => p.Name));
